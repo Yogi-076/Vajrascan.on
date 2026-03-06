@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "concurrently \"npm run server\" \"vite\"",
     "start": "node server/index.js",
-    "dev:frontend": "vite",
+    "dev:frontend": "vite --host",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "vite preview --host",
     "test": "vitest run",
     "test:watch": "vitest",
     "server": "cd server && npm start",

@@ -35,3 +35,29 @@ local.properties
 *.aab
 .gradle/
 .env
+
+# Generated debug / output / log files (not source)
+backend_error.txt
+debug_output.txt
+debug_output_utf8.txt
+lint_report.txt
+log.txt
+output.txt
+output2.txt
+files.txt
+status.txt
+test_output.txt
+test_output_abs.json
+bun.lockb
+
+# Server-side debug / crash logs
+server/debug_output*.txt
+server/crash_log.txt
+server/crash_final.txt
+server/error_log.txt
+server/test_server.log
+server/test_server_utf8.log
+
+# Generated scan / arsenal output directories
+arsenal_output/
+arsenal-core/arsenal_output/

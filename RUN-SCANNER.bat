@@ -27,10 +27,10 @@ echo   SERVERS STARTED!
 echo ========================================
 echo.
 echo   Backend:  http://localhost:3001
-echo   Frontend: http://localhost:8080
+echo   Frontend: http://localhost:8081
 echo.
 echo   Open your browser to:
-echo   http://localhost:8080/scanner
+echo   http://localhost:8081/scanner
 echo.
 echo   The scanner will show:
 echo   ✓ Live terminal output
