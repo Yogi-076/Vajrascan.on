@@ -53,7 +53,13 @@ class WapitiService {
             const outputFile = path.join(tempDir, 'report.json');
 
             // Fix for SPA scanning: Wapiti fails when URL has a fragment (/#/)
-            const cleanTarget = target.split('#')[0];
+            let cleanTarget = target.split('#')[0];
+
+            // Ensure URL has a scheme to prevent tld library parsing errors in Python
+            if (!/^https?:\/\//i.test(cleanTarget)) {
+                cleanTarget = `http://${cleanTarget}`;
+                this.addLog(scanId, `⚠️ Target URL missing scheme. Auto-corrected to: ${cleanTarget}`);
+            }
 
             const scanArgs = [
                 '-u', cleanTarget,
