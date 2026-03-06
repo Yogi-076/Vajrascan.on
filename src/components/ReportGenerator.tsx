@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FileText, Loader2, Download, AlertTriangle, Lock, Shield } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Config } from "@/config";
 
 interface ReportGeneratorProps {
     projectId: string;
@@ -66,7 +67,7 @@ export function ReportGenerator({ projectId, projectTitle, currentVersion = 0, o
         try {
             const activeSections = Object.entries(sections).filter(([, v]) => v).map(([k]) => k);
 
-            const res = await fetch('http://localhost:3001/api/reports/generate', {
+            const res = await fetch(`${Config.API_URL}/api/reports/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -82,7 +83,7 @@ export function ReportGenerator({ projectId, projectTitle, currentVersion = 0, o
             if (!res.ok) throw new Error("Failed to generate report");
 
             const data = await res.json();
-            const url = `http://localhost:3001/api/projects/${projectId}/reports/${data.filename}`;
+            const url = `${Config.API_URL}/api/projects/${projectId}/reports/${data.filename}`;
             setDownloadUrl(url);
             setGeneratedFilename(data.filename);
 

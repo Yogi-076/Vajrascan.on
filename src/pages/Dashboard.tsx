@@ -21,6 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Loader2 } from "lucide-react";
+import { VaptFlowchart } from "@/components/dashboard/VaptFlowchart";
+import { ThreatTopologyChart } from "@/components/dashboard/ThreatTopologyChart";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -79,7 +81,7 @@ const Dashboard = () => {
         }
       };
 
-      const res = await fetch('http://localhost:3001/api/projects', {
+      const res = await fetch(`${Config.API_URL}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -385,7 +387,7 @@ const Dashboard = () => {
                 )}
 
                 {/* ── Premium Stats Grid ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                   {stats.map((stat, idx) => {
                     const s = statStyle[stat.color] || statStyle["text-primary"];
                     return (
@@ -407,59 +409,18 @@ const Dashboard = () => {
                   })}
                 </div>
 
-                {/* Recent Scans */}
-                <div className="rounded-2xl bg-card/40 border border-white/[0.07] overflow-hidden backdrop-blur-sm">
-                  <div className="px-6 py-4 border-b border-white/[0.07] flex items-center justify-between hex-grid-bg">
-                    <h2 className="font-bold text-foreground flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-primary" />
-                      Recent Scans
-                    </h2>
+                {/* ── Visual Intelligence Area ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-2">
+                    <VaptFlowchart />
                   </div>
-                  <div className="divide-y divide-white/[0.05]">
-                    {history.slice(0, 5).map((scan, index) => (
-                      <div
-                        key={index}
-                        className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.03] transition-colors cursor-pointer group"
-                        onClick={() => navigate("/scanner")}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-muted-foreground group-hover:border-primary/30 transition-colors">
-                            <Globe className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{scan.target}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <Clock className="w-3 h-3" />
-                              {(() => {
-                                const d = new Date(scan.startedAt);
-                                return isNaN(d.getTime()) ? "N/A" : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${scan.status === "completed" ? "bg-emerald-400/10 text-emerald-400 border border-emerald-400/20"
-                            : scan.status === "failed" ? "bg-red-400/10 text-red-400 border border-red-400/20"
-                              : "bg-amber-400/10 text-amber-400 border border-amber-400/20"
-                            }`}>
-                            {scan.status || "pending"}
-                          </span>
-                          <span className="text-xs font-mono text-muted-foreground">{scan.summary?.total || 0} findings</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    ))}
-                    {history.length === 0 && (
-                      <div className="px-6 py-16 text-center">
-                        <Shield className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-                        <p className="text-sm text-muted-foreground">No scan history yet. Create a project to start your first assessment.</p>
-                      </div>
-                    )}
+                  <div className="lg:col-span-1">
+                    <ThreatTopologyChart />
                   </div>
                 </div>
 
                 {/* ── Dashboard Quick Actions ── */}
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                     <DialogTrigger asChild>
                       <button className="card-premium shimmer-effect p-6 text-left group w-full bg-gradient-to-br from-blue-600/15 to-transparent">

@@ -597,7 +597,7 @@
   },
   "infos": {
     "target": "http://testphp.vulnweb.com/",
-    "date": "Sat, 24 Jan 2026 09:39:26 +0000",
+    "date": "Thu, 05 Mar 2026 07:59:32 +0000",
     "version": "Wapiti 3.2.10",
     "scope": "url",
     "auth": null,

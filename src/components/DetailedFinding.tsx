@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import { Config } from "@/config";
 
 interface DetailedFindingProps {
     finding: {
@@ -55,7 +56,7 @@ export const DetailedFinding = ({ finding }: DetailedFindingProps) => {
         if (explanation) return;
         setIsExplaining(true);
         try {
-            const res = await fetch('http://localhost:3001/api/ai/explain', {
+            const res = await fetch(`${Config.API_URL}/api/ai/explain`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

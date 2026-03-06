@@ -4,7 +4,7 @@ async function testLogin() {
     const baseUrl = 'http://localhost:3001';
 
     // 1. Register a user
-    const email = `test_login_${Date.now()}@example.com`;
+    const email = `test_login_${Date.now()}@gmail.com`;
     const password = 'Password123!';
 
     console.log(`\n1️⃣ Registering user: ${email}...`);
@@ -36,7 +36,7 @@ async function testLogin() {
     } catch (error) {
         console.error('❌ Authentication failed:', error.message);
         if (error.response) {
-            console.error('Response data:', error.response.data);
+            console.error('Response data:', JSON.stringify(error.response.data, null, 2));
         }
     }
 }

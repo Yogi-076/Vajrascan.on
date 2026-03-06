@@ -49,7 +49,7 @@ export const authApi = {
 // --- Scanner Endpoints ---
 export const scannerApi = {
     getHistory: () => request<any[]>('/api/scan/history'),
-    startScan: (target: string, options?: { wafBypass?: boolean; proxy?: string; projectId?: string; fullModules?: boolean }) => request<any>('/api/scan/start', {
+    startScan: (target: string, options?: { wafBypass?: boolean; proxy?: string; projectId?: string; fullModules?: boolean; spaMode?: boolean }) => request<any>('/api/scan/start', {
         method: 'POST',
         body: JSON.stringify({ target, ...options }),
     }),
@@ -78,6 +78,7 @@ export const scannerApi = {
         tool?: string;
         projectId?: string;
         fullModules?: boolean;
+        spaMode?: boolean;
     }) => request<any>('/api/scan/authenticated/start', {
         method: 'POST',
         body: JSON.stringify(params),

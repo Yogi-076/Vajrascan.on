@@ -18,6 +18,7 @@ import {
     getCategoryColor,
     type EncodingContext
 } from "@/lib/payloadEncoder";
+import { Config } from "@/config";
 
 interface Payload {
     id: string;
@@ -42,7 +43,7 @@ const CATEGORY_ICONS: Record<string, typeof Sword> = {
     'Auth Bypass': Lock,
 };
 
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : '';
+const API_BASE = Config.API_URL;
 
 // Fuzzy search removed - using server-side search
 
@@ -261,7 +262,7 @@ export const PayloadForge = () => {
         } finally {
             setLoading(false);
         }
-    }, [activeCategory, debouncedSearch, offset, toast]);
+    }, [activeCategory, debouncedSearch, offset]);
 
     useEffect(() => {
         fetchPayloads();

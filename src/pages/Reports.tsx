@@ -99,8 +99,8 @@ const ReportsContent = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
 
                         {/* Left Column: Scan List */}
-                        <div className="lg:col-span-4 h-full flex flex-col">
-                            <div className="bg-card rounded-xl border shadow-sm p-4 h-full flex flex-col">
+                        <div className="lg:col-span-4 h-full flex flex-col relative">
+                            <div className="bg-card rounded-xl border shadow-sm p-4 absolute inset-0 flex flex-col">
                                 <h3 className="font-semibold mb-4 px-2">Scan History</h3>
                                 <div className="flex-1 overflow-hidden">
                                     {/* We reuse RecentScans but it needs to fit this container */}

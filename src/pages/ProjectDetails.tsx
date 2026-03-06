@@ -16,6 +16,7 @@ import { EvidenceUploadModal } from "@/components/EvidenceUploadModal";
 import { FindingsDashboard } from "@/components/FindingsDashboard";
 import { motion, AnimatePresence } from "framer-motion";
 import { scannerApi } from "@/lib/api_vmt";
+import { Config } from "@/config";
 
 interface ProjectDetails {
     id: string;
@@ -52,7 +53,7 @@ export default function ProjectDetails() {
     const refreshProject = useCallback(async () => {
         if (!id) return;
         try {
-            const res = await fetch(`http://localhost:3001/api/projects/${id}`);
+            const res = await fetch(`${Config.API_URL}/api/projects/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 setProject(data);
@@ -64,7 +65,7 @@ export default function ProjectDetails() {
 
     const fetchProject = useCallback(async () => {
         try {
-            const res = await fetch(`http://localhost:3001/api/projects/${id}`);
+            const res = await fetch(`${Config.API_URL}/api/projects/${id}`);
             if (res.ok) {
                 setProject(await res.json());
             } else {
@@ -121,7 +122,7 @@ export default function ProjectDetails() {
 
     const handleDownloadReport = (filename: string) => {
         const a = document.createElement('a');
-        a.href = `http://localhost:3001/api/projects/${project.id}/reports/${filename}`;
+        a.href = `${Config.API_URL}/api/projects/${project.id}/reports/${filename}`;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
@@ -171,7 +172,7 @@ export default function ProjectDetails() {
                             onClick={async () => {
                                 if (window.confirm("Are you absolute sure you want to delete this project? This will permanently erase all scans, reports, and findings associated with it. This action cannot be undone.")) {
                                     try {
-                                        const res = await fetch(`http://localhost:3001/api/projects/${project.id}`, {
+                                        const res = await fetch(`${Config.API_URL}/api/projects/${project.id}`, {
                                             method: 'DELETE'
                                         });
                                         if (res.ok) {

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Config } from "@/config";
 import {
     Target, PlusCircle, FolderOpen, Activity, ArrowRight,
     ShieldCheck, Search, Loader2, Briefcase, Globe,
-    LayoutGrid, Users, Zap, FileText
+    LayoutGrid, Users, Zap, FileText, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +42,7 @@ export default function Projects() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     // New Project Form State
     const [formData, setFormData] = useState({
@@ -63,7 +65,7 @@ export default function Projects() {
 
     const fetchProjects = async () => {
         try {
-            const res = await fetch('http://localhost:3001/api/projects');
+            const res = await fetch(`${Config.API_URL}/api/projects`);
             if (res.ok) {
                 const data = await res.json();
                 setProjects(data);
@@ -96,7 +98,7 @@ export default function Projects() {
                 }
             };
 
-            const res = await fetch('http://localhost:3001/api/projects', {
+            const res = await fetch(`${Config.API_URL}/api/projects`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -132,6 +134,41 @@ export default function Projects() {
             });
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevents click from bubbling to the parent
+        if (!window.confirm("Are you sure you want to permanently delete this project and all its data?")) return;
+
+        setDeletingId(projectId);
+        try {
+            const res = await fetch(`${Config.API_URL}/api/projects/${projectId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                toast({
+                    title: "Project Deleted",
+                    description: "The project has been permanently removed.",
+                });
+                fetchProjects(); // refresh the list
+            } else {
+                const err = await res.json();
+                toast({
+                    variant: "destructive",
+                    title: "Error deleting project",
+                    description: err.error || "Unknown error occurred"
+                });
+            }
+        } catch (e) {
+            toast({
+                variant: "destructive",
+                title: "Connection Error",
+                description: "Could not reach the backend API."
+            });
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -343,10 +380,26 @@ export default function Projects() {
                                                 <span className="text-[10px] font-mono text-muted-foreground">{project.companyName}</span>
                                             </div>
                                         </div>
-                                        <Badge variant="outline" className={`h-6 text-[10px] border-none font-black uppercase tracking-widest px-3 ${project.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-500/10 text-slate-400'
-                                            }`}>
-                                            {project.status}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className={`h-6 text-[10px] border-none font-black uppercase tracking-widest px-3 ${project.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-500/10 text-slate-400'
+                                                }`}>
+                                                {project.status}
+                                            </Badge>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                                onClick={(e) => handleDeleteProject(project.id, e)}
+                                                disabled={deletingId === project.id}
+                                                title="Delete Project"
+                                            >
+                                                {deletingId === project.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="w-4 h-4" />
+                                                )}
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     {/* Target Mono Box */}

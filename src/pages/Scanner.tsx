@@ -321,7 +321,8 @@ export const Scanner = () => {
     const [showAdvancedSelectors, setShowAdvancedSelectors] = useState(false);
     const [wafBypassEnabled, setWafBypassEnabled] = useState(false);
     const [proxyEnabled, setProxyEnabled] = useState(false);
-    const [fullModulesEnabled, setFullModulesEnabled] = useState(false);
+    const [fullModulesEnabled, setFullModulesEnabled] = useState(true); // Always ON for Specific Full Scan
+    const [spaModeEnabled, setSpaModeEnabled] = useState(false);
     const [proxyUrl, setProxyUrl] = useState('');
     const [repoName, setRepoName] = useState('');
 
@@ -465,14 +466,15 @@ export const Scanner = () => {
                 data = await scannerApi.startAuthenticatedScan({
                     target: targetUrl, loginUrl, username: authUsername,
                     password: authPassword, selectors, tool: 'wapiti', projectId: projectId || undefined,
-                    fullModules: fullModulesEnabled
+                    fullModules: fullModulesEnabled, spaMode: spaModeEnabled
                 });
             } else {
                 data = await scannerApi.startScan(targetUrl, {
                     wafBypass: wafBypassEnabled,
                     proxy: proxyEnabled ? proxyUrl : undefined,
                     projectId: projectId || undefined,
-                    fullModules: fullModulesEnabled
+                    fullModules: fullModulesEnabled,
+                    spaMode: spaModeEnabled
                 });
             }
 
@@ -754,182 +756,7 @@ export const Scanner = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* ── Authentication Panel ── */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                    className={`rounded-2xl border overflow-hidden transition-all duration-300 ${authEnabled
-                                        ? 'bg-emerald-500/[0.02] border-emerald-500/15 shadow-lg shadow-emerald-500/5'
-                                        : 'bg-white/[0.01] border-white/[0.04] hover:border-white/[0.06]'
-                                        }`}
-                                >
-                                    <div
-                                        className="flex items-center justify-between px-5 py-4 cursor-pointer transition-colors hover:bg-white/[0.02]"
-                                        onClick={() => !isScanning && setAuthEnabled(!authEnabled)}
-                                    >
-                                        <div className="flex items-center gap-3.5">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${authEnabled
-                                                ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-400 shadow-lg shadow-emerald-500/10'
-                                                : 'bg-white/[0.03] text-muted-foreground/30'
-                                                }`}>
-                                                {authEnabled ? <Unlock className="w-4.5 h-4.5" /> : <Lock className="w-4.5 h-4.5" />}
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold tracking-tight">{authEnabled ? 'Authentication Enabled' : 'Authentication'}</h3>
-                                                <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                                                    {authEnabled ? 'Scanning with credentials — behind login pages' : 'Enable to scan protected areas'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Switch
-                                            checked={authEnabled}
-                                            onCheckedChange={setAuthEnabled}
-                                            disabled={isScanning}
-                                        />
-                                    </div>
 
-                                    <AnimatePresence>
-                                        {authEnabled && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className="px-5 pb-5 space-y-4 border-t border-white/[0.04] pt-4">
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                        <div className="space-y-2">
-                                                            <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Login URL</label>
-                                                            <Input
-                                                                placeholder="https://example.com/login"
-                                                                value={loginUrl}
-                                                                onChange={(e) => setLoginUrl(e.target.value)}
-                                                                className="h-10 text-xs bg-white/[0.02] border-white/[0.06] rounded-xl focus:border-emerald-500/30 transition-all"
-                                                                disabled={isScanning}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Username</label>
-                                                            <Input
-                                                                placeholder="user@example.com"
-                                                                value={authUsername}
-                                                                onChange={(e) => setAuthUsername(e.target.value)}
-                                                                className="h-10 text-xs bg-white/[0.02] border-white/[0.06] rounded-xl focus:border-emerald-500/30 transition-all"
-                                                                disabled={isScanning}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Password</label>
-                                                            <Input
-                                                                type="password"
-                                                                placeholder="••••••••"
-                                                                value={authPassword}
-                                                                onChange={(e) => setAuthPassword(e.target.value)}
-                                                                className="h-10 text-xs bg-white/[0.02] border-white/[0.06] rounded-xl focus:border-emerald-500/30 transition-all"
-                                                                disabled={isScanning}
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Advanced Selectors */}
-                                                    <details className="group">
-                                                        <summary className="cursor-pointer text-[10px] text-primary/50 hover:text-primary/80 flex items-center gap-2 transition-colors font-semibold uppercase tracking-wider">
-                                                            <Settings className="w-3 h-3" />
-                                                            Custom CSS Selectors
-                                                            <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
-                                                        </summary>
-                                                        <div className="mt-3 p-4 bg-white/[0.015] rounded-xl border border-white/[0.04] grid grid-cols-3 gap-3">
-                                                            <div className="space-y-1.5">
-                                                                <label className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-wider">Username Field</label>
-                                                                <Input placeholder="#email" value={customSelectors.user}
-                                                                    onChange={(e) => setCustomSelectors({ ...customSelectors, user: e.target.value })}
-                                                                    className="h-8 text-[10px] font-mono bg-white/[0.02] border-white/[0.04] rounded-lg" />
-                                                            </div>
-                                                            <div className="space-y-1.5">
-                                                                <label className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-wider">Password Field</label>
-                                                                <Input placeholder="#password" value={customSelectors.pass}
-                                                                    onChange={(e) => setCustomSelectors({ ...customSelectors, pass: e.target.value })}
-                                                                    className="h-8 text-[10px] font-mono bg-white/[0.02] border-white/[0.04] rounded-lg" />
-                                                            </div>
-                                                            <div className="space-y-1.5">
-                                                                <label className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-wider">Submit Button</label>
-                                                                <Input placeholder="button[type='submit']" value={customSelectors.btn}
-                                                                    onChange={(e) => setCustomSelectors({ ...customSelectors, btn: e.target.value })}
-                                                                    className="h-8 text-[10px] font-mono bg-white/[0.02] border-white/[0.04] rounded-lg" />
-                                                            </div>
-                                                        </div>
-                                                    </details>
-
-                                                    <div className="flex items-center gap-2.5 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-                                                        <Shield className="w-4 h-4 text-emerald-400/40 shrink-0" />
-                                                        <p className="text-[10px] text-emerald-400/50 font-medium">
-                                                            Credentials are used only for this scan session and never stored.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-
-                                {/* ── WAF Bypass Panel ── */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.45 }}
-                                    className={`rounded-2xl border overflow-hidden transition-all duration-300 ${wafBypassEnabled
-                                        ? 'bg-orange-500/[0.02] border-orange-500/15 shadow-lg shadow-orange-500/5'
-                                        : 'bg-white/[0.01] border-white/[0.04] hover:border-white/[0.06]'
-                                        }`}
-                                >
-                                    <div
-                                        className="flex items-center justify-between px-5 py-4 cursor-pointer transition-colors hover:bg-white/[0.02]"
-                                        onClick={() => !isScanning && setWafBypassEnabled(!wafBypassEnabled)}
-                                    >
-                                        <div className="flex items-center gap-3.5">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${wafBypassEnabled
-                                                ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 text-orange-400 shadow-lg shadow-orange-500/10'
-                                                : 'bg-white/[0.03] text-muted-foreground/30'
-                                                }`}>
-                                                <Shield className={`w-4.5 h-4.5 ${wafBypassEnabled ? 'text-orange-400' : ''}`} />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold tracking-tight">{wafBypassEnabled ? 'WAF Bypass Active' : 'WAF Bypass'}</h3>
-                                                <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                                                    {wafBypassEnabled ? 'Rotating UA, headers & timing to evade WAF' : 'Enable to bypass Cloudflare, Akamai, AWS WAF etc.'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Switch
-                                            checked={wafBypassEnabled}
-                                            onCheckedChange={setWafBypassEnabled}
-                                            disabled={isScanning}
-                                        />
-                                    </div>
-
-                                    <AnimatePresence>
-                                        {wafBypassEnabled && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className="px-5 pb-4 border-t border-white/[0.04] pt-3">
-                                                    <div className="flex items-center gap-2.5 p-3 bg-orange-500/5 border border-orange-500/10 rounded-xl">
-                                                        <Shield className="w-4 h-4 text-orange-400/40 shrink-0" />
-                                                        <p className="text-[10px] text-orange-400/50 font-medium">
-                                                            Randomizes User-Agent, headers, and request timing. Detects and adapts to Cloudflare, Akamai, AWS WAF, ModSecurity, Imperva, and F5 BigIP.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
 
                                 {/* ── Full Modules Scan Panel ── */}
                                 <motion.div
@@ -953,9 +780,9 @@ export const Scanner = () => {
                                                 <Layers className={`w-4.5 h-4.5 ${fullModulesEnabled ? 'text-purple-400' : ''}`} />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-bold tracking-tight">{fullModulesEnabled ? 'Full Modules Active' : 'Full Modules Scan'}</h3>
+                                                <h3 className="text-sm font-bold tracking-tight">{fullModulesEnabled ? 'Specific Full Scan Active' : 'Specific Full Scan'}</h3>
                                                 <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                                                    {fullModulesEnabled ? 'Testing all Wapiti vulnerabilities' : 'Enable to run all Wapiti modules for comprehensive testing'}
+                                                    {fullModulesEnabled ? 'Running specific exhaustive modules payload at depth 5' : 'Enable to run the most exhaustive specific scan module payload'}
                                                 </p>
                                             </div>
                                         </div>
@@ -970,76 +797,7 @@ export const Scanner = () => {
                                     </div>
                                 </motion.div>
 
-                                {/* ── Proxy Configuration Panel ── */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                    className={`rounded-2xl border overflow-hidden mt-4 transition-all duration-300 ${proxyEnabled
-                                        ? 'bg-sky-500/[0.02] border-sky-500/15 shadow-lg shadow-sky-500/5'
-                                        : 'bg-white/[0.01] border-white/[0.04] hover:border-white/[0.06]'
-                                        }`}
-                                >
-                                    <div
-                                        className="flex items-center justify-between px-5 py-4 cursor-pointer transition-colors hover:bg-white/[0.02]"
-                                        onClick={() => !isScanning && setProxyEnabled(!proxyEnabled)}
-                                    >
-                                        <div className="flex items-center gap-3.5">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${proxyEnabled
-                                                ? 'bg-gradient-to-br from-sky-500/20 to-blue-500/20 text-sky-400 shadow-lg shadow-sky-500/10'
-                                                : 'bg-white/[0.03] text-muted-foreground/30'
-                                                }`}>
-                                                <Globe className={`w-4.5 h-4.5 ${proxyEnabled ? 'text-sky-400' : ''}`} />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold tracking-tight">{proxyEnabled ? 'Proxy Active' : 'Proxy Settings'}</h3>
-                                                <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                                                    {proxyEnabled ? 'Routing traffic through custom proxy' : 'Route scan via HTTP/SOCKS5 proxy'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                                            <Switch
-                                                checked={proxyEnabled}
-                                                onCheckedChange={setProxyEnabled}
-                                                disabled={isScanning}
-                                                className="data-[state=checked]:bg-sky-500"
-                                            />
-                                        </div>
-                                    </div>
 
-                                    <AnimatePresence>
-                                        {proxyEnabled && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                            >
-                                                <div className="px-5 pb-5 pt-1 space-y-4 border-t border-white/[0.02]">
-                                                    <div className="relative group">
-                                                        <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-muted-foreground/40 group-focus-within:text-sky-500/50 transition-colors">
-                                                            <Server className="w-3.5 h-3.5" />
-                                                        </div>
-                                                        <Input
-                                                            type="text"
-                                                            placeholder="http://user:pass@host:port"
-                                                            value={proxyUrl}
-                                                            onChange={(e) => setProxyUrl(e.target.value)}
-                                                            className="pl-10 h-11 bg-white/[0.02] border-white/[0.05] focus:border-sky-500/30 focus:ring-sky-500/10 transition-all rounded-xl text-xs"
-                                                        />
-                                                    </div>
-                                                    <div className="flex items-center gap-2.5 p-3 bg-sky-500/5 border border-sky-500/10 rounded-xl">
-                                                        <Shield className="w-4 h-4 text-sky-400/40 shrink-0" />
-                                                        <p className="text-[10px] text-sky-400/50 font-medium">
-                                                            Supported formats: http://, https://, socks5://
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
 
                                 {/* ── Terminal ── */}
                                 {(logs.length > 0 || isScanning) && (

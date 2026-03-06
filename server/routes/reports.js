@@ -104,7 +104,11 @@ router.post('/generate', async (req, res) => {
 
     // 4. Build the PDF Document with versioned filename
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const safeCompany = projectInfo.companyName.replace(/[^a-z0-9]/gi, '_');
+    const companyName = projectInfo.companyName || 'Client';
+    const testerName = projectInfo.testerName || 'Security Team';
+    const targetUrls = Array.isArray(projectInfo.targetUrls) ? projectInfo.targetUrls : [projectInfo.targetUrl || 'N/A'];
+    const engagementType = projectInfo.engagementType || 'VAPT';
+    const safeCompany = companyName.replace(/[^a-z0-9]/gi, '_');
     const reportFilename = `${projectId}_Report_v${reportVersion}.0_${dateStr}.pdf`;
     const reportPath = path.join(reportsDir, reportFilename);
 
@@ -127,7 +131,7 @@ router.post('/generate', async (req, res) => {
 
         doc.fontSize(16)
             .fillColor('#38bdf8') // Primary blue
-            .text(`Prepared for: ${projectInfo.companyName}`, { align: 'center' });
+            .text(`Prepared for: ${companyName}`, { align: 'center' });
 
         doc.moveDown(1);
 
@@ -135,8 +139,8 @@ router.post('/generate', async (req, res) => {
             .fillColor('#94a3b8')
             .text(`Date: ${new Date().toLocaleDateString()}`, { align: 'center' })
             .text(`Project ID: ${projectId}`, { align: 'center' })
-            .text(`Engagement: ${projectInfo.engagementType}`, { align: 'center' })
-            .text(`Lead Tester: ${projectInfo.testerName}`, { align: 'center' });
+            .text(`Engagement: ${engagementType}`, { align: 'center' })
+            .text(`Lead Tester: ${testerName}`, { align: 'center' });
 
         doc.addPage();
 
@@ -150,13 +154,13 @@ router.post('/generate', async (req, res) => {
         if (sections.includes('executive')) {
             renderHeader('1. Executive Summary');
             doc.fontSize(11).font('Helvetica').fillColor('#334155')
-                .text(`This report documents the findings of the Vulnerability Assessment and Penetration Testing (VAPT) performed for ${projectInfo.companyName}. The objective was to identify security weaknesses in the target infrastructure and provide actionable remediation guidelines.`, { align: 'justify' });
+                .text(`This report documents the findings of the VAPT performed for ${companyName}. The objective was to identify security weaknesses in the target infrastructure and provide actionable remediation guidelines.`, { align: 'justify' });
 
             doc.moveDown();
 
             // Scope
             doc.font('Helvetica-Bold').text('1.1 Scope of Engagement');
-            doc.font('Helvetica').text(projectInfo.targetUrls.join(', '));
+            doc.font('Helvetica').text(targetUrls.join(', '));
 
             doc.moveDown();
 

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Paperclip, Upload, X, Loader2, FileImage, FileText, File, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Config } from "@/config";
 
 interface EvidenceUploadModalProps {
     projectId: string;
@@ -59,7 +60,7 @@ export function EvidenceUploadModal({ projectId, open, onOpenChange, onSuccess }
             const formData = new FormData();
             selectedFiles.forEach(f => formData.append("files", f));
 
-            const res = await fetch(`http://localhost:3001/api/projects/${projectId}/evidence`, {
+            const res = await fetch(`${Config.API_URL}/api/projects/${projectId}/evidence`, {
                 method: "POST",
                 body: formData,
             });

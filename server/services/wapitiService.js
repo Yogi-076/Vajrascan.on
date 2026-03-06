@@ -52,13 +52,25 @@ class WapitiService {
             const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'wapiti-'));
             const outputFile = path.join(tempDir, 'report.json');
 
+            // Fix for SPA scanning: Wapiti fails when URL has a fragment (/#/)
+            const cleanTarget = target.split('#')[0];
+
             const scanArgs = [
-                '-u', target,
+                '-u', cleanTarget,
                 '-f', 'json',
                 '-o', outputFile,
                 '--scope', 'domain',
-                '--level', '2'
+                '--level', '2',
+                '--flush-session',
+                '-d', '5',
+                '--verbose', '1'
             ];
+
+            // SPA Mode via pre-crawled URLs
+            if (options.urlsFile) {
+                scanArgs.push('-s', options.urlsFile);
+                this.addLog(scanId, `🌐 SPA Support ENABLED: Ingesting pre-crawled Katana URLs`);
+            }
 
             // Add authentication if provided
             if (options.authSession) {
@@ -77,8 +89,9 @@ class WapitiService {
             }
 
             if (options.fullModules) {
-                scanArgs.push('-m', 'all,-takeover');
-                this.addLog(scanId, '🚀 FULL MODULES MODE: Using all modules (-m all,-takeover) — Skipping "takeover" to prevent engine hang');
+                const specModules = "backup,brute_login_form,buster,cms,crlf,csrf,exec,file,htaccess,htp,ldap,log4shell,methods,network_device,nikto,permanentxss,redirect,shellshock,spring4shell,sql,ssl,ssrf,timesql,upload,wapp,wp_enum,xss,xxe";
+                scanArgs.push('-m', specModules);
+                this.addLog(scanId, `🚀 DETAILED SCAN MODE: Using modules (-m ${specModules}) with depth (-d 5)`);
             } else if (options.modules) {
                 scanArgs.push('-m', options.modules);
             }
@@ -111,6 +124,7 @@ class WapitiService {
             return new Promise((resolve, reject) => {
                 this.addLog(scanId, `Executing DAST Scan...`);
 
+                console.log("SPAWN DEBUG:", { spawnCmd, spawnArgs, spawnCwd });
                 const child = spawn(spawnCmd, spawnArgs, {
                     cwd: spawnCwd,
                     shell: false,
@@ -208,7 +222,9 @@ class WapitiService {
                             resolve(parsed);
                         } else if (this.activeProcesses.get(scanId)?.isStopped) {
                             this.activeProcesses.delete(scanId);
-                            resolve({ vulnerabilities: [] });
+                            // Try to parse findings from whatever logs we have so far
+                            const partialFindings = this.parseFindingsFromLogs(this.scanLogs.get(scanId) || []);
+                            resolve({ vulnerabilities: partialFindings });
                         } else if (code !== 0) {
                             // Check if crash was just a known Windows lock issue during async SQLite flush
                             const errorMsg = stderr || `Exit code ${code}`;
@@ -216,11 +232,14 @@ class WapitiService {
                                 this.addLog(scanId, `⚠️ Warning: Engine cache locked by OS. Parsing live feed instead.`);
                                 try { await fs.rm(tempDir, { recursive: true, force: true }); } catch (e) { }
                                 this.activeProcesses.delete(scanId);
-                                return resolve({ vulnerabilities: [] }); // Soft resolve because logs exist
+
+                                const partialFindings = this.parseFindingsFromLogs(this.scanLogs.get(scanId) || []);
+                                return resolve({ vulnerabilities: partialFindings }); // Soft resolve because logs exist
                             }
 
                             // No report AND non-zero exit = real failure
                             this.addLog(scanId, `❌ Scan failed with code ${code}, no report generated`);
+
 
                             if (errorMsg.includes('not recognized') || errorMsg.includes('not found') || errorMsg.includes('ENOENT')) {
                                 reject(new Error('Wapiti not found. Please install it via `pip install wapiti3` or ensure it is in PATH.'));
@@ -251,22 +270,23 @@ class WapitiService {
     async stopScan(scanId) {
         const processData = this.activeProcesses.get(scanId);
         if (!processData) {
-            throw new Error(`No active process found for scan ${scanId}`);
+            // No active process — return empty results gracefully
+            return { findings: [], summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 } };
         }
 
         processData.isStopped = true;
         this.addLog(scanId, '🛑 Stopping engine and parsing cached findings...');
 
         return new Promise((resolve) => {
-            // Listen for the close event on our end to ensure clean cleanup
+            // Listen for the close event to allow clean cleanup
             processData.child.on('close', () => {
-                // Wait for the ReportTransformer inside index.js to handle the logs
-                const ReportTransformer = require('../utils/reportTransformer');
-                const partialResults = ReportTransformer.transform(this.scanLogs.get(scanId) || []);
-                resolve(partialResults);
+                // Return empty results - the ReportTransformer will be called from scan.js
+                // with the actual JSON report file if it exists. Returning empty here is safe
+                // because scan.js will read the partial report from disk in the close handler.
+                resolve({ findings: [], summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 } });
             });
 
-            // Send SIGTERM to kill it quickly
+            // Send SIGTERM to kill it
             try { processData.child.kill(); } catch (e) { }
         });
     }
@@ -351,11 +371,11 @@ class WapitiService {
 
     updateProgress(scanId, output) {
         const currentProgress = this.scanProgress.get(scanId) || 0;
-        if (output.includes('Exploring')) {
+        if (output.includes('Exploring') || output.includes('crawling') || output.includes('found')) {
             this.scanProgress.set(scanId, Math.min(currentProgress + 2, 40));
-        } else if (output.includes('Attacking')) {
+        } else if (output.includes('Attacking') || output.includes('Launching module') || output.includes('Checking')) {
             this.scanProgress.set(scanId, Math.max(40, Math.min(currentProgress + 5, 90)));
-        } else if (output.includes('Generating')) {
+        } else if (output.includes('Generating') || output.includes('Saving')) {
             this.scanProgress.set(scanId, 95);
         }
     }
@@ -365,6 +385,102 @@ class WapitiService {
             progress: this.scanProgress.get(scanId) || 0,
             logs: this.scanLogs.get(scanId) || []
         };
+    }
+
+    /**
+     * Fallback mechanism to extract vulnerabilities from console logs
+     * if the scan was interrupted before generating the JSON report.
+     */
+    parseFindingsFromLogs(logs) {
+        const vulnerabilities = {};
+        let currentFinding = null;
+        let isCollectingRequest = false;
+        let requestLines = [];
+
+        for (let i = 0; i < logs.length; i++) {
+            const line = logs[i];
+            const cleanLine = line.replace(/^\[.*?\]\s*/, '').trim();
+
+            if (cleanLine === '---') {
+                if (currentFinding) {
+                    // Close out the previous finding and save the request
+                    if (requestLines.length > 0) {
+                        currentFinding.http_request = requestLines.join('\n');
+                    }
+
+                    if (!vulnerabilities[currentFinding.type]) {
+                        vulnerabilities[currentFinding.type] = [];
+                    }
+                    vulnerabilities[currentFinding.type].push(currentFinding);
+                }
+
+                // Start expecting a new finding on the next lines
+                currentFinding = null;
+                isCollectingRequest = false;
+                requestLines = [];
+
+                // The next line after '---' usually describes the vulnerability
+                if (i + 1 < logs.length) {
+                    const nextLineMatch = logs[i + 1].replace(/^\[.*?\]\s*/, '').trim();
+                    if (nextLineMatch && nextLineMatch !== '---' && !nextLineMatch.startsWith('Evil request:')) {
+                        // Example: "Blind SQL vulnerability in http://target.com/page via injection in the parameter id"
+                        let type = "Unknown Vulnerability";
+                        if (nextLineMatch.includes(" vulnerability in ")) {
+                            type = nextLineMatch.split(" vulnerability in ")[0].trim();
+                        } else if (nextLineMatch.includes(" found in ")) {
+                            type = nextLineMatch.split(" found in ")[0].trim();
+                        } else if (nextLineMatch.includes(" for URL ")) {
+                            type = nextLineMatch.split(" for URL ")[0].trim();
+                        }
+
+                        let pathMatch = "unknown";
+                        let parameter = "";
+
+                        const urlMatchRegex = /(http[s]?:\/\/[^\s]+)/;
+                        const urlMatch = nextLineMatch.match(urlMatchRegex);
+                        if (urlMatch && urlMatch[1]) {
+                            try {
+                                const parsedUrl = new URL(urlMatch[1]);
+                                pathMatch = parsedUrl.pathname + parsedUrl.search;
+                            } catch (e) {
+                                pathMatch = urlMatch[1];
+                            }
+                        }
+
+                        if (nextLineMatch.includes("parameter ")) {
+                            parameter = nextLineMatch.split("parameter ")[1].trim();
+                        }
+
+                        currentFinding = {
+                            type: type,
+                            info: nextLineMatch,
+                            path: pathMatch,
+                            parameter: parameter,
+                            level: 2, // Default assume medium
+                            http_request: ""
+                        };
+                    }
+                }
+            } else if (cleanLine === 'Evil request:') {
+                isCollectingRequest = true;
+            } else if (isCollectingRequest && currentFinding) {
+                requestLines.push(cleanLine);
+            }
+        }
+
+        // Catch the last one if log ended without final '---'
+        if (currentFinding && isCollectingRequest && requestLines.length > 0) {
+            currentFinding.http_request = requestLines.join('\n');
+            if (!vulnerabilities[currentFinding.type]) {
+                vulnerabilities[currentFinding.type] = [];
+            }
+            vulnerabilities[currentFinding.type].push(currentFinding);
+        }
+
+        // Return an empty array if nothing found so the transformer doesn't crash
+        if (Object.keys(vulnerabilities).length === 0) return [];
+
+        return vulnerabilities;
     }
 }
 

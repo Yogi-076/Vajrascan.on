@@ -5,11 +5,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import { CyberGrid } from "@/components/CyberGrid";
 import { ArsenalEmptyState } from "@/components/arsenal/ArsenalEmptyState";
 import { Forrecon } from "@/components/arsenal/Forrecon";
-import { SovereignVuln } from "@/components/arsenal/SovereignVuln";
 import { AetherCore } from "@/components/arsenal/AetherCore";
 import { PayloadForge } from "@/components/arsenal/PayloadForge";
 import { JWTMaster } from "./JWTMaster";
-import { RetireScanner } from "@/components/arsenal/RetireScanner";
+import { ArsenalPipeline } from "@/components/arsenal/ArsenalPipeline";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppSidebar } from "@/components/AppSidebar";
 
@@ -103,17 +102,14 @@ const Tools = () => {
                             <TabsTrigger value="aether" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 font-mono text-xs px-3 py-1.5 border border-transparent data-[state=active]:border-cyan-500/30">
                                 <Globe className="w-3 h-3 mr-2" /> AETHER-CORE
                             </TabsTrigger>
-                            <TabsTrigger value="sovereign" className="data-[state=active]:bg-cyber-purple/20 data-[state=active]:text-cyber-purple font-mono text-xs px-3 py-1.5 border border-transparent data-[state=active]:border-cyber-purple/30">
-                                <Shield className="w-3 h-3 mr-2" /> SOVEREIGN
-                            </TabsTrigger>
                             <TabsTrigger value="payload" className="data-[state=active]:bg-purple-600/20 data-[state=active]:text-purple-400 font-mono text-xs px-3 py-1.5 border border-transparent data-[state=active]:border-purple-500/30">
                                 <Wrench className="w-3 h-3 mr-2" /> PAYLOAD-FORGE
                             </TabsTrigger>
                             <TabsTrigger value="jwt" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 font-mono text-xs px-3 py-1.5 border border-transparent data-[state=active]:border-amber-500/30">
                                 <Key className="w-3 h-3 mr-2" /> JWT-MASTER
                             </TabsTrigger>
-                            <TabsTrigger value="retire" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono text-xs px-3 py-1.5 border border-transparent data-[state=active]:border-emerald-500/30">
-                                <Package className="w-3 h-3 mr-2" /> RETIRE-JS
+                            <TabsTrigger value="arsenal-pipeline" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400 font-mono text-xs px-3 py-1.5 border border-transparent data-[state=active]:border-red-500/30">
+                                <Terminal className="w-3 h-3 mr-2" /> ARSENAL-PIPELINE
                             </TabsTrigger>
                         </TabsList>
 
@@ -128,11 +124,6 @@ const Tools = () => {
                                     <AetherCore />
                                 </ErrorBoundary>
                             </TabsContent>
-                            <TabsContent value="sovereign" className="h-full mt-0 data-[state=active]:flex flex-col">
-                                <ErrorBoundary>
-                                    <SovereignVuln />
-                                </ErrorBoundary>
-                            </TabsContent>
                             <TabsContent value="payload" className="h-full mt-0 data-[state=active]:flex flex-col">
                                 <ErrorBoundary>
                                     <PayloadForge />
@@ -143,9 +134,9 @@ const Tools = () => {
                                     <JWTMaster />
                                 </ErrorBoundary>
                             </TabsContent>
-                            <TabsContent value="retire" className="h-full mt-0 data-[state=active]:flex flex-col">
+                            <TabsContent value="arsenal-pipeline" className="h-[calc(100vh-250px)] mt-0 data-[state=active]:flex flex-col overflow-y-auto">
                                 <ErrorBoundary>
-                                    <RetireScanner />
+                                    <ArsenalPipeline />
                                 </ErrorBoundary>
                             </TabsContent>
                         </div>

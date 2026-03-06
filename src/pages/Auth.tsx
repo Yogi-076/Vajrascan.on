@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "@/integrations/supabase/client";
+// import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
+// import { ThemeSupa } from "@supabase/auth-ui-shared";
+// import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -11,9 +11,14 @@ import { SecurityHUD } from "@/components/SecurityHUD";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { session, demoLogin } = useAuth();
+  const { session, signIn, signUp, demoLogin } = useAuth();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     if (session) {
@@ -161,48 +166,81 @@ const Auth = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <SupabaseAuth
-                  supabaseClient={supabase}
-                  appearance={{
-                    theme: ThemeSupa,
-                    variables: {
-                      default: {
-                        colors: {
-                          brand: '#3b82f6', // bright blue
-                          brandAccent: '#2563eb', // deeper blue
-                          brandButtonText: 'white',
-                          defaultButtonBackground: '#1e293b',
-                          defaultButtonBackgroundHover: '#334155',
-                          inputBackground: 'rgba(15, 23, 42, 0.6)',
-                          inputBorder: '#334155',
-                          inputText: '#e2e8f0',
-                          inputPlaceholder: '#64748b',
-                        },
-                        fontSizes: {
-                          baseBodySize: '14px',
-                          baseInputSize: '15px',
-                          baseLabelSize: '14px',
-                          baseButtonSize: '15px',
-                        },
-                        space: {
-                          buttonPadding: '12px 16px',
-                          inputPadding: '12px 16px',
-                        },
-                        radii: {
-                          borderRadiusButton: '8px',
-                          buttonBorderRadius: '8px',
-                          inputBorderRadius: '8px',
-                        },
+                <div className="w-full space-y-4">
+                  <div className="flex border-b border-slate-700/50 mb-4">
+                    <button
+                      onClick={() => setIsLogin(true)}
+                      className={`flex-1 pb-2 text-sm font-medium transition-colors border-b-2 ${isLogin ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => setIsLogin(false)}
+                      className={`flex-1 pb-2 text-sm font-medium transition-colors border-b-2 ${!isLogin ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                    >
+                      Sign Up
+                    </button>
+                  </div>
+
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!email || !password) return toast({ title: "Error", description: "Email and password are required", variant: "destructive" });
+
+                    try {
+                      if (isLogin) {
+                        await signIn(email, password);
+                        toast({ title: "Success", description: "Logged in successfully" });
+                        navigate("/dashboard");
+                      } else {
+                        await signUp(email, password, username || email.split('@')[0]);
+                        toast({ title: "Success", description: "Account created successfully" });
+                        navigate("/dashboard");
                       }
-                    },
-                    style: {
-                      button: { borderColor: 'rgba(255,255,255,0.1)' },
-                      input: { borderColor: 'rgba(255,255,255,0.1)' },
+                    } catch (err: any) {
+                      toast({ title: "Authentication Failed", description: err.message || "An error occurred", variant: "destructive" });
                     }
-                  }}
-                  theme="dark"
-                  providers={[]}
-                />
+                  }} className="space-y-3">
+                    {!isLogin && (
+                      <div className="space-y-1">
+                        <label className="text-xs text-slate-400 px-1">Username (Optional)</label>
+                        <input
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="Your unique handle"
+                          className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400 px-1">Email Address</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="operator@mainframe.com"
+                        className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400 px-1">Password</label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••••••"
+                        className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        autoComplete={isLogin ? "current-password" : "new-password"}
+                        required
+                      />
+                    </div>
+                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-md transition-colors shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:shadow-[0_0_20px_rgba(37,99,235,0.6)] mt-2">
+                      {isLogin ? "Initialize Uplink" : "Create Operator Profile"}
+                    </button>
+                  </form>
+                </div>
 
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">

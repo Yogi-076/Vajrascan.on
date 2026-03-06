@@ -53,7 +53,6 @@ const App = () => (
                 {/* [NEW] VAPT Project Management Routing */}
                 <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
                 <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetails /></ProtectedRoute>} />
-
                 <Route
                   path="/scanner"
                   element={

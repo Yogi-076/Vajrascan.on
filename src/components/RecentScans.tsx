@@ -59,6 +59,22 @@ export const RecentScans = ({ onSelect }: RecentScansProps) => {
         return () => clearInterval(interval);
     }, []);
 
+    const handleDeleteScan = async (e: React.MouseEvent, scanId: string) => {
+        e.stopPropagation(); // prevent row select
+        if (!confirm("Are you sure you want to delete this scan log?")) return;
+
+        try {
+            const res = await fetch(`${Config.API_URL}/api/scan/${scanId}`, { method: 'DELETE' });
+            if (res.ok) {
+                setHistory(prev => prev.filter(s => s.id !== scanId));
+            } else {
+                console.error("Failed to delete scan");
+            }
+        } catch (error) {
+            console.error("Error deleting scan", error);
+        }
+    };
+
     const filteredHistory = history.filter(scan => {
         const target = scan?.target || "";
         return target.toLowerCase().includes(searchTerm.toLowerCase());
@@ -167,7 +183,16 @@ export const RecentScans = ({ onSelect }: RecentScansProps) => {
                                     ))}
                                 </div>
 
-                                <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/30 opacity-0 group-hover/item:opacity-100 group-hover/item:translate-x-1 transition-all" />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 opacity-0 group-hover/item:opacity-100 transition-all">
+                                    <button
+                                        onClick={(e) => handleDeleteScan(e, scan.id)}
+                                        className="p-1.5 hover:bg-red-500/20 text-muted-foreground hover:text-red-400 rounded transition-colors"
+                                        title="Delete Scan Log"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground/50 hover:text-primary transition-colors" />
+                                </div>
                             </motion.div>
                         ))}
                     </AnimatePresence>

@@ -17,9 +17,19 @@ if (!fs.existsSync(DATA_FILE)) {
 
 const supabase = require('./supabaseClient');
 
-// Helper to check if Supabase is active
+// Helper to check if Supabase is configured with backend (non-VITE) keys
+// VITE_ prefixed keys are frontend-only and should NOT enable cloud mode
 const isSupabaseActive = () => {
-    return process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY);
+    // New STORAGE_MODE toggle - defaults to cloud if not specified and keys exist
+    if (process.env.STORAGE_MODE === 'local') return false;
+
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+    // Must have non-VITE keys and they must not equal the VITE_ values
+    if (!url || !key) return false;
+    // Block VITE-prefixed values being used under the non-prefixed key names
+    if (url === process.env.VITE_SUPABASE_URL && !process.env.SUPABASE_SERVICE_ROLE_KEY) return false;
+    return true;
 };
 
 // Recursive directory deletion helper
@@ -40,7 +50,30 @@ const deleteFolderRecursive = (folderPath) => {
 class Storage {
     constructor() {
         this.useLocal = !isSupabaseActive();
-        console.log(`[Storage] Initialized. Mode: ${this.useLocal ? 'LOCAL FILE (scans.json)' : 'SUPABASE CLOUD'}`);
+        console.log(`[Storage] Initialized. Mode: ${this.useLocal ? 'LOCAL FILE (scans.json)' : 'SUPABASE CLOUD (verifying...)'}`);
+        // Self-healing: test the connection asynchronously; fall back to local if tables missing
+        if (!this.useLocal) {
+            this._verifySupabaseConnection();
+        }
+    }
+
+    async _verifySupabaseConnection() {
+        try {
+            const { error } = await supabase.from('scans').select('id').limit(1);
+            if (error && (error.message.includes('schema cache') || error.message.includes('does not exist') || error.message.includes('relation'))) {
+                console.warn('[Storage] ⚠️  Supabase tables not found. Falling back to LOCAL FILE mode.');
+                console.warn('[Storage] 💡 To enable cloud mode, run the SQL migration in supabase/migrations/20260305_scans_and_findings.sql');
+                this.useLocal = true;
+            } else if (error) {
+                console.warn('[Storage] ⚠️  Supabase connection error:', error.message, '— falling back to LOCAL FILE mode.');
+                this.useLocal = true;
+            } else {
+                console.log('[Storage] ✅ Supabase connected. Mode confirmed: SUPABASE CLOUD');
+            }
+        } catch (e) {
+            console.warn('[Storage] ⚠️  Supabase unreachable. Falling back to LOCAL FILE mode.');
+            this.useLocal = true;
+        }
     }
 
     // --- Local File Helpers ---
@@ -258,15 +291,18 @@ class Storage {
         let localScans = [];
         try {
             const localData = this._readLocal();
-            localScans = Object.values(localData).map(s => ({
-                id: s.id,
-                target: s.target,
-                status: s.status,
-                startedAt: s.startedAt,
-                summary: s.summary,
-                type: s.type,
-                findingsCount: s.findings ? s.findings.length : 0
-            })).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+            // Filter out keys like 'users' that aren't actual scan objects
+            localScans = Object.values(localData)
+                .filter(s => s && typeof s === 'object' && !Array.isArray(s) && s.id)
+                .map(s => ({
+                    id: s.id,
+                    target: s.target,
+                    status: s.status,
+                    startedAt: s.startedAt,
+                    summary: s.summary,
+                    type: s.type,
+                    findingsCount: s.findings ? s.findings.length : 0
+                })).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
         } catch (e) { /* ignore */ }
 
         if (this.useLocal) return localScans;

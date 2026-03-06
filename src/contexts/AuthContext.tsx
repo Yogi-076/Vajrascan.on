@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
+import { authApi } from "@/lib/api_vmt";
 
 export type Organization = {
   id: string;
@@ -11,6 +10,17 @@ export type Organization = {
 
 export type OrgMemberRole = 'owner' | 'admin' | 'member';
 
+export type User = {
+  id: string;
+  email: string;
+  username: string;
+  role: string;
+};
+
+export type Session = {
+  access_token: string;
+  user: User;
+};
 
 type AuthContextType = {
   session: Session | null;
@@ -25,6 +35,7 @@ type AuthContextType = {
 };
 
 const DEMO_SESSION_KEY = "vajrascan_demo_session";
+const TOKEN_KEY = "vmt_token";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -44,181 +55,96 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Safety timeout to prevent infinite loading if Supabase is unreachable
-    const safetyTimeout = setTimeout(() => {
-      setLoading((prev) => {
-        if (prev) {
-          console.warn("Auth initialization timed out, falling back to unauthenticated state.");
-          return false;
-        }
-        return prev;
-      });
-    }, 3000);
-
-    // 1. Get initial session
-    // FIRST: Check if we have a persisted demo session
-    const storedDemo = localStorage.getItem(DEMO_SESSION_KEY);
-    if (storedDemo === "true") {
-      console.log("Restoring demo session from storage...");
-      // Re-hydrate demo user
-      const mockUser: User = {
-        id: "demo-user-id",
-        aud: "authenticated",
-        role: "authenticated",
-        email: "demo@vajrascan.com",
-        email_confirmed_at: new Date().toISOString(),
-        phone: "",
-        confirmed_at: new Date().toISOString(),
-        last_sign_in_at: new Date().toISOString(),
-        app_metadata: { provider: "email", providers: ["email"] },
-        user_metadata: { username: "DemoAdmin" },
-        identities: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_anonymous: false
-      };
-
-      const mockSession: Session = {
-        access_token: "mock-token",
-        token_type: "bearer",
-        expires_in: 3600,
-        refresh_token: "mock-refresh-token",
-        user: mockUser,
-      };
-
-      setSession(mockSession);
-      setUser(mockUser);
-      setOrganization({
-        id: "demo-org-id",
-        name: "Demo Organization",
-        slug: "demo-org",
-        subscription_tier: "enterprise"
-      });
-      setRole("owner");
-      setLoading(false);
-      clearTimeout(safetyTimeout);
-      return;
-    }
-
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      clearTimeout(safetyTimeout);
-      if (error) {
-        console.error("Supabase Auth Error:", error);
+    const initAuth = async () => {
+      // 1. Check Demo Session
+      const storedDemo = localStorage.getItem(DEMO_SESSION_KEY);
+      if (storedDemo === "true") {
+        await demoLogin();
+        return;
       }
-      setSession(session);
-      setUser(session?.user ?? null);
 
-      if (session?.user) {
-        // Fetch Organization
+      // 2. Check Real Local JWT Session
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
         try {
-          // @ts-ignore
-          const { data, error: orgError } = await supabase
-            .from('organization_members')
-            .select('role, organization:organizations(*)')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          if (orgError) {
-            console.warn("Error fetching org (migration might be pending):", orgError);
-          } else if (data) {
-            // @ts-ignore - Supabase types might imply array, but single() returns object
-            const org = data.organization as Organization;
-            setOrganization(org);
-            setRole(data.role as OrgMemberRole);
-          }
-        } catch (e) {
-          console.error("Org fetch failed", e);
+          const userData = await authApi.getMe();
+          setUser(userData);
+          setSession({ access_token: token, user: userData });
+          // Assign a default local organization since we bypassed Supabase
+          setOrganization({
+            id: "local-org-id",
+            name: "Local Organization",
+            slug: "local-org",
+            subscription_tier: "enterprise"
+          });
+          setRole(userData.role as OrgMemberRole || "admin");
+        } catch (err) {
+          console.error("Failed to restore session:", err);
+          localStorage.removeItem(TOKEN_KEY);
         }
       }
 
       setLoading(false);
-    }).catch(err => {
-      clearTimeout(safetyTimeout);
-      console.error("Supabase connection failed:", err);
-      setLoading(false);
-    });
-
-    // 2. Listen for changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      // FIX: Prevent Supabase from clearing our manual demo session
-      setSession(prev => {
-        if (prev?.user?.id === "demo-user-id" && !newSession) {
-          console.log("Preserving demo session despite auth event.");
-          return prev;
-        }
-        return newSession;
-      });
-      setUser(newUser => {
-        if (newUser?.id === "demo-user-id" && !newSession?.user) {
-          return newUser;
-        }
-        return newSession?.user ?? null;
-      });
-      setLoading(false);
-    });
-
-    return () => {
-      clearTimeout(safetyTimeout);
-      subscription.unsubscribe();
     };
+
+    initAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const res = await authApi.login({ email, password });
+    if (res.error) throw new Error(res.error);
+
+    localStorage.setItem(TOKEN_KEY, res.token);
+    setSession({ access_token: res.token, user: res.user });
+    setUser(res.user);
+    setOrganization({
+      id: "local-org-id",
+      name: "Local Organization",
+      slug: "local-org",
+      subscription_tier: "enterprise"
     });
-    if (error) throw error;
+    setRole(res.user.role as OrgMemberRole || "admin");
   };
 
   const signUp = async (email: string, password: string, username: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username, // Stored in user_metadata
-          full_name: username, // Map username to full_name optionally
-        },
-      },
-    });
-    if (error) throw error;
+    const res = await authApi.register({ email, password, username });
+    if (res.error) throw new Error(res.error);
+
+    if (res.token) {
+      localStorage.setItem(TOKEN_KEY, res.token);
+      setSession({ access_token: res.token, user: res.user });
+      setUser(res.user);
+      setOrganization({
+        id: "local-org-id",
+        name: "Local Organization",
+        slug: "local-org",
+        subscription_tier: "enterprise"
+      });
+      setRole(res.user.role as OrgMemberRole || "admin");
+    }
   };
 
   const signOut = async () => {
     localStorage.removeItem(DEMO_SESSION_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    setSession(null);
+    setUser(null);
     setOrganization(null);
     setRole(null);
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
   };
 
   const demoLogin = async () => {
     localStorage.setItem(DEMO_SESSION_KEY, "true");
+    localStorage.setItem(TOKEN_KEY, "mock-token");
     const mockUser: User = {
       id: "demo-user-id",
-      aud: "authenticated",
-      role: "authenticated",
       email: "demo@vajrascan.com",
-      email_confirmed_at: new Date().toISOString(),
-      phone: "",
-      confirmed_at: new Date().toISOString(),
-      last_sign_in_at: new Date().toISOString(),
-      app_metadata: { provider: "email", providers: ["email"] },
-      user_metadata: { username: "DemoAdmin" },
-      identities: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_anonymous: false
+      username: "DemoAdmin",
+      role: "admin"
     };
 
     const mockSession: Session = {
       access_token: "mock-token",
-      token_type: "bearer",
-      expires_in: 3600,
-      refresh_token: "mock-refresh-token",
       user: mockUser,
     };
 

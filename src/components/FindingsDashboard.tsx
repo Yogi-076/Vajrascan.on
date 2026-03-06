@@ -9,6 +9,7 @@ import {
     Info, X, Search, Trash2, ExternalLink, Loader2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Config } from "@/config";
 
 interface Finding {
     id: string;
@@ -54,7 +55,7 @@ export function FindingsDashboard({ projectId, open, onOpenChange, onFindingDele
     const fetchFindings = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:3001/api/projects/${projectId}/findings`);
+            const res = await fetch(`${Config.API_URL}/api/projects/${projectId}/findings`);
             if (res.ok) setFindings(await res.json());
         } catch (e) {
             console.error("Findings fetch failed", e);
@@ -70,7 +71,7 @@ export function FindingsDashboard({ projectId, open, onOpenChange, onFindingDele
     const handleDelete = async (id: string, title: string) => {
         setDeleting(id);
         try {
-            const res = await fetch(`http://localhost:3001/api/projects/${projectId}/findings/${id}`, { method: "DELETE" });
+            const res = await fetch(`${Config.API_URL}/api/projects/${projectId}/findings/${id}`, { method: "DELETE" });
             if (res.ok) {
                 toast({ title: "Finding deleted", description: `"${title}" removed.` });
                 setFindings(prev => prev.filter(f => f.id !== id));

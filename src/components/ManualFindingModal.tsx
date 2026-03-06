@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, Loader2, ShieldAlert } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Config } from "@/config";
 
 interface ManualFindingModalProps {
     projectId: string;
@@ -51,7 +52,7 @@ export function ManualFindingModal({ projectId, open, onOpenChange, onSuccess }:
         }
         setIsSubmitting(true);
         try {
-            const res = await fetch(`http://localhost:3001/api/projects/${projectId}/findings`, {
+            const res = await fetch(`${Config.API_URL}/api/projects/${projectId}/findings`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),

@@ -1,0 +1,4 @@
+Starting test scan...
+Detected path: D:\Design_-_Development_VAPT_Framework-main\Design_-_Development_VAPT_Framework-main\wapiti-master\wapiti-master\bin\wapiti
+Scan result keys: classifications,vulnerabilities,anomalies,additionals,infos
+Vulnerabilities count: 36

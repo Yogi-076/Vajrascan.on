@@ -94,7 +94,7 @@ export const Forrecon = () => {
             }, 1000);
         }
         return () => clearInterval(interval);
-    }, [scanId, status, toast]);
+    }, [scanId, status]);
 
     const handleStart = async () => {
         if (!target) {
