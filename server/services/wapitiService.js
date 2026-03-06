@@ -205,9 +205,13 @@ class WapitiService {
                 child.stderr.on('data', (data) => {
                     const out = data.toString();
                     stderr += out;
-                    // Only log meaningful stderr, not progress bars
+                    // Only log meaningful stderr, not progress bars or harmless Python 3.12+ warnings
                     const trimmed = out.trim();
-                    if (trimmed && !trimmed.startsWith('\r') && trimmed.length > 5) {
+                    if (trimmed
+                        && !trimmed.startsWith('\r')
+                        && trimmed.length > 5
+                        && !trimmed.includes('SyntaxWarning: invalid escape sequence')
+                        && !trimmed.includes('<string>:1: SyntaxWarning')) {
                         this.addLog(scanId, trimmed);
                     }
                 });
