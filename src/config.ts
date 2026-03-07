@@ -3,11 +3,11 @@
 // This allows switching between Localhost and Production (vajrascan.online) easily.
 
 export const Config = {
-    // Uses VITE_API_URL env var if set, otherwise defaults to current host.
-    API_URL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`,
+    // Uses relative path for API to work with reverse proxies and HTTPS.
+    API_URL: import.meta.env.VITE_API_URL || '',
 
-    // Chatbot URL: Defaults to current host port for stability. Override for Prod.
-    CHATBOT_URL: import.meta.env.VITE_CHATBOT_URL || `http://${window.location.hostname}:18789/__moltbot__/a2ui/`,
+    // Chatbot URL: Use relative path if possible, or adapt to the current host.
+    CHATBOT_URL: import.meta.env.VITE_CHATBOT_URL || `/__moltbot__/a2ui/`,
 
     // Feature Flags
     ENABLE_MOCK_DATA: import.meta.env.VITE_ENABLE_MOCK === 'true',
