@@ -23,6 +23,8 @@ def check_tool(name: str) -> bool:
 
 def run_tool(phase: int, tool: str, cmd: str, out_file: str = None, timeout: int = None, shell_cmd: bool = False) -> tuple[int, str]:
     """Run an external CLI command and stream output live without buffering."""
+    import time
+    
     # Check if the tool binary exists before attempting to run it
     binary = cmd.split()[0] if not shell_cmd else tool
     if not shell_cmd and not shutil.which(binary):
@@ -35,27 +37,43 @@ def run_tool(phase: int, tool: str, cmd: str, out_file: str = None, timeout: int
     try:
         is_windows = os.name == 'nt'
         use_shell = shell_cmd or is_windows
-        args = cmd if use_shell else cmd.split()
         
-        # Use multiprocessing to strictly enforce timeouts against Windows pipe hangs
-        import multiprocessing
-        p = multiprocessing.Process(target=_worker, args=(args, use_shell))
-        p.start()
-        p.join(timeout=timeout)
-        
-        if p.is_alive():
-            warn(f"{tool} timed out after {timeout}s (hard kill)")
-            p.terminate()
-            p.join()
+        # Correctly determine if we should use python or python3
+        if cmd.startswith("python3 "):
+            cmd = cmd.replace("python3 ", sys.executable + " ", 1)
+        elif cmd.startswith("python "):
+            cmd = cmd.replace("python ", sys.executable + " ", 1)
+
+        start_time = time.time()
+        process = subprocess.Popen(
+            cmd if use_shell else cmd.split(),
+            shell=use_shell,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
+
+        # Non-blocking read loop
+        while True:
+            line = process.stdout.readline()
+            if not line and process.poll() is not None:
+                break
+            if line:
+                print(line.strip())
+                sys.stdout.flush()
             
-            if is_windows:
-                binary = tool + ".exe"
-                subprocess.call(["taskkill", "/F", "/T", "/IM", binary], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                if tool == "katana":
-                    subprocess.call(["taskkill", "/F", "/T", "/IM", "chrome.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return -1, ""
-            
-        ret_code = p.exitcode if p.exitcode is not None else 0
+            # Check timeout
+            if timeout and (time.time() - start_time) > timeout:
+                warn(f"{tool} timed out after {timeout}s (hard kill)")
+                if is_windows:
+                    subprocess.call(["taskkill", "/F", "/T", "/PID", str(process.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                else:
+                    process.terminate()
+                break
+
+        ret_code = process.poll() or 0
         if out_file and os.path.exists(out_file):
             return ret_code, out_file
         return ret_code, ""
@@ -63,10 +81,10 @@ def run_tool(phase: int, tool: str, cmd: str, out_file: str = None, timeout: int
     except FileNotFoundError:
         skip(f"[SKIP] Tool '{tool}' not found in PATH — install it to enable this phase step.")
         sys.stdout.flush()
-        sys.stdout.flush()
         return -1, ""
     except Exception as e:
-        err(f"{tool} execution failed: {e}")
+        err(f"{tool} execution failed: {str(e)}")
+        sys.stdout.flush()
         return -1, ""
 
 def read_lines(path: str) -> list[str]:

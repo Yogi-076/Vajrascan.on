@@ -653,24 +653,29 @@ export const Scanner = () => {
             <nav className="h-16 border-b border-white/[0.04] bg-card/40 backdrop-blur-2xl sticky top-0 z-50 px-5 flex items-center justify-between shrink-0 relative">
                 <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
-                <div className="flex items-center gap-4">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-white/[0.04]" onClick={() => {
+                <div className="flex items-center gap-6">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
                             if (projectId) navigate(`/projects/${projectId}`);
                             else window.history.back();
-                        }}>
-                            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-                        </Button>
-                    </motion.div>
+                        }}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary gap-2 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] h-8 px-4 rounded-xl transition-all hidden md:flex"
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Back to <span className="text-primary italic font-black">{projectId ? 'Project' : 'System'}</span>
+                    </Button>
+
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/25">
-                                <Shield className="w-4.5 h-4.5 text-white" />
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/25">
+                                <Shield className="w-4 h-4 text-white" />
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-sm tracking-tight leading-none">VAPT Scanner</h1>
+                            <h1 className="font-bold text-xs tracking-tight leading-none">VAPT Scanner</h1>
                             <p className="text-[9px] text-muted-foreground/60 font-semibold uppercase tracking-[0.2em] mt-0.5">Shannon Engine v3.0</p>
                         </div>
                     </div>

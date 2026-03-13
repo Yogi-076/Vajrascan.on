@@ -47,7 +47,7 @@ def phase3_corsy(state, threads):
     raw_out = os.path.join(state.out_dir, "corsy_raw.json")
     
     write_lines(in_file, state.all_urls)
-    cmd = f"python3 corsy.py -i {in_file} -t {threads} -o {raw_out}"
+    cmd = f"python corsy.py -i {in_file} -t {threads} -o {raw_out}"
     run_tool(3, "corsy", cmd)
     
     # Parse Corsy JSON and enforce strict 3-condition FP rule
@@ -143,7 +143,7 @@ def phase3_oralyzer(state, threads):
     in_file = os.path.join(state.out_dir, "oralyzer_input.txt")
     write_lines(in_file, list(set(valid_targets)))
     
-    cmd = f"python3 oralyzer.py -l {in_file}"
+    cmd = f"python oralyzer.py -l {in_file}"
     run_tool(3, "oralyzer", cmd, shell_cmd=True)
     ok(f"Oralyzer checked {len(valid_targets)} endpoints for unvalidated redirects")
 

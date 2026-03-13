@@ -80,6 +80,18 @@ const ReportsContent = () => {
             <AppSidebar mobileOpen={sidebarOpen} setMobileOpen={setSidebarOpen} />
 
             <main className="flex-1 flex flex-col h-screen overflow-hidden bg-background">
+                <div className="px-6 pt-6 -mb-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/dashboard')}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary gap-2 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] h-8 px-4 rounded-xl transition-all"
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Back to <span className="text-primary italic font-black">Dashboard</span>
+                    </Button>
+                </div>
+
                 {/* Header */}
                 <div className="h-16 border-b bg-background/95 backdrop-blur-md px-6 flex items-center justify-between shrink-0 z-10">
                     <div className="flex items-center gap-4">

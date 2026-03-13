@@ -122,6 +122,7 @@ def main():
     
     elapsed = time.time() - state.start_time
     print_summary(state, elapsed)
+    sys.stdout.flush()
 
 if __name__ == "__main__":
     try:

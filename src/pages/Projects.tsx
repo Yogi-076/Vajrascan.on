@@ -5,7 +5,7 @@ import { Config } from "@/config";
 import {
     Target, PlusCircle, FolderOpen, Activity, ArrowRight,
     ShieldCheck, Search, Loader2, Briefcase, Globe,
-    LayoutGrid, Users, Zap, FileText, Trash2
+    LayoutGrid, Users, Zap, FileText, Trash2, ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -261,6 +261,22 @@ export default function Projects() {
                         </motion.div>
                     ))}
                 </div>
+                {/* ── BREADCRUMB ── */}
+                <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex justify-start"
+                >
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/dashboard')}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary gap-2 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] h-9 px-4 rounded-xl transition-all"
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Back to <span className="text-primary italic font-black">Dashboard</span>
+                    </Button>
+                </motion.div>
 
                 {/* ── HEADER & SEARCH ── */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-white/[0.07] pb-8 hex-grid-bg">

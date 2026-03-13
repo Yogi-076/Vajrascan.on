@@ -86,7 +86,8 @@ def phase1_aquatone(state, threads):
     in_file = os.path.join(state.out_dir, "all_urls.txt")
     aqua_dir = os.path.join(state.out_dir, "aquatone_report")
     
-    cmd = f"cat {in_file} | aquatone -out {aqua_dir} -threads {threads}"
+    # Use direct input redirection instead of cat for Windows compatibility
+    cmd = f"aquatone -out {aqua_dir} -threads {threads} < {in_file}"
     run_tool(1, "aquatone", cmd, shell_cmd=True)
     ok(f"Aquatone report generated at {aqua_dir}/aquatone_report.html")
 

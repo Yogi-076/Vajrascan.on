@@ -131,18 +131,26 @@ export default function ProjectDetails() {
     return (
         <div className="min-h-screen bg-background aurora-bg noise-texture p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+                {/* ── BREADCRUMB ── */}
+                <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex justify-start"
+                >
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/projects')}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary gap-2 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] h-9 px-4 rounded-xl transition-all"
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Back to <span className="text-primary italic font-black">Workspace</span>
+                    </Button>
+                </motion.div>
 
                 {/* ── PREMIUM HEADER ── */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-white/[0.07]">
                     <div className="flex items-center gap-5">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate('/projects')}
-                            className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/10 hover:border-primary/30 transition-all text-muted-foreground hover:text-primary shrink-0"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </Button>
                         <div className="space-y-1">
                             <div className="flex items-center gap-3">
                                 <h1 className="text-3xl font-black text-white tracking-tight">{project.title}</h1>

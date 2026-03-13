@@ -1,7 +1,8 @@
 import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from "react";
 import { motion } from "framer-motion";
-import { Shield, ShieldCheck, LayoutDashboard, Terminal, Activity, FileCode, Wrench, ChevronRight, Search, Globe, Layers, Ghost, Gift, FolderSearch, Key, Package, Menu, Target, Lock } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Shield, ShieldCheck, LayoutDashboard, Terminal, Activity, FileCode, Wrench, ChevronRight, Search, Globe, Layers, Ghost, Gift, FolderSearch, Key, Package, Menu, Target, Lock, ArrowLeft } from "lucide-react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { CyberGrid } from "@/components/CyberGrid";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,6 +71,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 const Tools = () => {
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState("forrecon");
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -87,6 +89,22 @@ const Tools = () => {
             <AppSidebar mobileOpen={sidebarOpen} setMobileOpen={setSidebarOpen} />
 
             <main className="flex-1 relative z-10 flex flex-col h-full overflow-hidden p-4 lg:p-6">
+                <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="mb-4"
+                >
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/dashboard')}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary gap-2 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] h-8 px-4 rounded-xl transition-all"
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Back to <span className="text-primary italic font-black">Dashboard</span>
+                    </Button>
+                </motion.div>
+
                 <div className="flex-none mb-4">
                     {/* Compact Header */}
                     <div className="flex items-center justify-between gap-4">

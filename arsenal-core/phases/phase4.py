@@ -62,7 +62,7 @@ def phase4_liffy(state, threads):
         
     log(4, "liffy", "Exploiting Local File Inclusion")
     for url in state.lfi_urls:
-        cmd = f"python3 liffy.py \"{url}\" -f --detection --waf-bypass"
+        cmd = f"python liffy.py \"{url}\" -f --detection --waf-bypass"
         run_tool(4, "liffy", cmd, shell_cmd=True)
         # Parser checks for exact verified tokens like root:x:0:0
 

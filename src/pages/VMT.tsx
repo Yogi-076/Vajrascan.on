@@ -3,7 +3,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 const VMT = () => {
@@ -33,6 +34,18 @@ const VMT = () => {
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+                <div className="px-6 pt-6 -mb-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/dashboard')}
+                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-cyber-cyan gap-2 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] h-8 px-4 rounded-xl transition-all"
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Back to <span className="text-cyber-cyan italic font-black">Dashboard</span>
+                    </Button>
+                </div>
+
                 {/* Header */}
                 <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-3xl shrink-0">
                     <div className="flex items-center gap-6">
