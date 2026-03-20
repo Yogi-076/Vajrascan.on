@@ -35,15 +35,15 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
 // --- Auth Endpoints ---
 export const authApi = {
-    login: (credentials: any) => request<any>('/auth/login', {
+    login: (credentials: any) => request<any>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
     }),
-    register: (data: any) => request<any>('/auth/register', {
+    register: (data: any) => request<any>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
     }),
-    getMe: () => request<any>('/auth/me'),
+    getMe: () => request<any>('/api/auth/me'),
 };
 
 // --- Scanner Endpoints ---
