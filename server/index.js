@@ -146,7 +146,7 @@ app.use('/', payloadsRoutes);
 
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', service: 'VAPT Framework Scanner API' });
+    res.json({ status: 'ok', service: 'VAPT Framework Scanner API', version: '1.1.0-secure' });
 });
 
 // ── Default Project Initialization ────────────────────────────────────────────
