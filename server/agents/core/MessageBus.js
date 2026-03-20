@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 class MessageBus extends EventEmitter {
     constructor() {
         super();
+        this.setMaxListeners(20);
         this.history = [];
     }
 

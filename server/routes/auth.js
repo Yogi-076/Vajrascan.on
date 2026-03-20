@@ -13,7 +13,7 @@ const localAuth = require('../db/localAuth');
 const { validateEmail, validateUsername, sanitizeString } = require('../utils/validation');
 
 // ── Register ─────────────────────────────────────────────────────────────────
-router.post('/auth/register', async (req, res) => {
+router.post('/api/auth/register', async (req, res) => {
     console.log('[Auth] Register attempt:', req.body?.email);
     try {
         let { email, password, username, firstName, lastName, orgName } = req.body || {};
@@ -62,7 +62,7 @@ router.post('/auth/register', async (req, res) => {
 });
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-router.post('/auth/login', async (req, res) => {
+router.post('/api/auth/login', async (req, res) => {
     console.log('[Auth] Login attempt:', req.body?.email);
     try {
         const { email, password } = req.body || {};
@@ -82,13 +82,13 @@ router.post('/auth/login', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Login error:', error);
+        console.warn('[Auth] Login failed:', error.message);
         res.status(401).json({ error: error.message || 'Login failed' });
     }
 });
 
 // ── Current User ──────────────────────────────────────────────────────────────
-router.get('/auth/me', async (req, res) => {
+router.get('/api/auth/me', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).json({ error: 'No token provided' });
