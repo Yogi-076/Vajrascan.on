@@ -138,6 +138,20 @@ export default function ProjectDetails() {
     return (
         <div className="min-h-screen bg-background aurora-bg noise-texture p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => window.history.back()}
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Back
+                        </Button>
+                        <Badge variant="outline" className="text-[10px] opacity-20 hover:opacity-100 transition-opacity">BUILD-1.1.2-STABLE</Badge>
+                    </div>
+                </div>
                 {/* ── BREADCRUMB ── */}
                 <motion.div
                     initial={{ opacity: 0, x: -10 }}
@@ -384,9 +398,10 @@ export default function ProjectDetails() {
                                                         a.download = `raw_scan_${scan.id}.json`;
                                                         document.body.appendChild(a);
                                                         a.click();
-                                                        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                                                        // Wait 60s instead of 1s to ensure "Save As" dialogs don't kill the blob
+                                                        setTimeout(() => window.URL.revokeObjectURL(url), 60000);
                                                         document.body.removeChild(a);
-                                                        toast({ title: "Downloaded", description: "Raw scan results downloaded." });
+                                                        toast({ title: "Downloaded", description: "Raw scan results saved locally." });
                                                     } catch (err: any) {
                                                         toast({ title: "Download Failed", description: err.message, variant: "destructive" });
                                                     }

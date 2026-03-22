@@ -602,6 +602,7 @@ export const VMTSpreadsheet = ({ initialProjectId }: { initialProjectId?: string
                                 document.body.appendChild(link);
                                 link.click();
                                 document.body.removeChild(link);
+                                setTimeout(() => URL.revokeObjectURL(url), 60000);
                                 toast.success("Export Complete");
                             }
                         }}

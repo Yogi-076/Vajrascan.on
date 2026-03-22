@@ -247,7 +247,8 @@ export const ScanReport = ({ result }: ScanReportProps) => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        // Increased to 60s to allow for "Save As" browser prompts
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
 
     const handleDownloadPDF = () => {

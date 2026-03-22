@@ -131,7 +131,8 @@ export const RetireScanner = () => {
         a.href = url;
         a.download = `sbom-${target.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
         a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        // Increased to 60s for stability
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
 
     return (
