@@ -84,8 +84,12 @@ export function ReportGenerator({ projectId, projectTitle, currentVersion = 0, o
             a.download = generatedFilename;
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(blobUrl);
+            
+            // Fix: Delay cleanup to prevent Chromium race condition which drops the filename and saves as UUID
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            }, 1000);
 
             toast({ title: "📥 Downloading...", description: generatedFilename });
         } catch (e: any) {
