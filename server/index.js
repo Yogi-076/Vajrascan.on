@@ -128,14 +128,24 @@ app.use('/api/projects/:projectId/reports', optionalAuth, async (req, res, next)
         return res.status(500).json({ error: 'Storage error verify ownership' });
     }
 
-    express.static(
-        path.join(__dirname, 'data', 'projects', projectId, 'reports'),
-        {
-            setHeaders: (res, filePath) => {
-                res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+    // ── Delivery ──
+    const filename = path.basename(req.path);
+    const reportPath = path.join(__dirname, 'data', 'projects', projectId, 'reports', filename);
+
+    console.log(`[Report Download] Serving file: ${reportPath}`);
+    if (fs.existsSync(reportPath)) {
+        return res.download(reportPath, filename, (err) => {
+            if (err) {
+                console.error(`[Report Download] Error sending file: ${err.message}`);
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'Error downloading report' });
+                }
             }
-        }
-    )(req, res, next);
+        });
+    } else {
+        console.warn(`[Report Download] File not found: ${reportPath}`);
+        return res.status(404).json({ error: 'Report file not found' });
+    }
 });
 
 // ── API Routes ────────────────────────────────────────────────────────────────
