@@ -6,6 +6,30 @@ const crypto = require('crypto');
 const puppeteer = require('puppeteer');
 const { generateReportHTML } = require('../utils/reportTemplate');
 
+// Assume DATA_DIR is passed or relative
+const DATA_DIR = path.join(__dirname, '..', 'data');
+
+/**
+ * Helper to ensure directory exists
+ */
+const ensureDir = (dirPath) => {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+};
+
+/**
+ * Helper to safely read JSON
+ */
+const readJsonSafe = (filePath) => {
+    if (!fs.existsSync(filePath)) return null;
+    try {
+        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch {
+        return null;
+    }
+};
+
 // ═══════════════════════════════════════════
 // POST /api/reports/generate
 // Generates a VAPT report for a specific project
