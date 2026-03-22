@@ -13,6 +13,7 @@ class WapitiService {
         this.activeProcesses = new Map(); // Store active child processes
         // Auto-patch the system Wapiti crawler.py to handle TldBadUrl
         this._patchSystemWapiti();
+<<<<<<< HEAD
         // Self-heal: restore corrupted system wapitiCore/main/wapiti.py from local clean copy
         this._healWapitiCore();
     }
@@ -74,6 +75,8 @@ class WapitiService {
             // Non-fatal
             console.warn('[WapitiService] _healWapitiCore skipped:', (e.message || '').substring(0, 120));
         }
+=======
+>>>>>>> deploy_fix
     }
 
     /**

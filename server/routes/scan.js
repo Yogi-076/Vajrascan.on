@@ -28,10 +28,15 @@ router.post('/api/scan/start', optionalAuth, requireModule('dast_core'), async (
         // Auto-add scheme if missing (so users can type bare domains like testfire.net)
         if (!/^https?:\/\//i.test(target)) target = `http://${target}`;
 
+<<<<<<< HEAD
         target = sanitizeString(target, 500);
         if (!validateUrl(target)) {
             return res.status(400).json({ error: `Invalid target URL format: ${target}` });
         }
+=======
+        // Validate the normalized URL
+        try { new URL(target); } catch (e) { return res.status(400).json({ error: `Invalid target URL: ${target}` }); }
+>>>>>>> deploy_fix
 
         const scanId = uuidv4();
         const tool = (req.body.options?.tool || req.body.tool || 'wapiti').toLowerCase();
@@ -358,6 +363,7 @@ router.post('/api/scan/authenticated/start', optionalAuth, requireModule('dast_c
         if (!/^https?:\/\//i.test(target)) target = `http://${target}`;
         if (!/^https?:\/\//i.test(loginUrl)) loginUrl = `http://${loginUrl}`;
 
+<<<<<<< HEAD
         target = sanitizeString(target, 500);
         loginUrl = sanitizeString(loginUrl, 500);
 
@@ -365,6 +371,8 @@ router.post('/api/scan/authenticated/start', optionalAuth, requireModule('dast_c
             return res.status(400).json({ error: 'Invalid URL format for target or login page' });
         }
 
+=======
+>>>>>>> deploy_fix
 
         const scanId = uuidv4();
         await storage.saveScan({ id: scanId, target, userId: req.userId || 'anonymous', type: 'authenticated', status: 'authenticating', startedAt: new Date().toISOString(), progress: 0, findings: [], summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 } });

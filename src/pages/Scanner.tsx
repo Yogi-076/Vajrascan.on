@@ -13,21 +13,12 @@ import {
     Search, Settings, ArrowLeft, Bug, Globe, Crosshair, Brain,
     Clock, ChevronRight, Trash2, Plus, Lock, Unlock, Zap, Activity,
     Target, ExternalLink, History, Sparkles, Radar, Eye, Wifi,
-    ChevronDown, Layers, ScanLine, AlertTriangle, CheckCircle2, Server,
-    Menu
+    ChevronDown, Layers, ScanLine, AlertTriangle, CheckCircle2, Server
 } from "lucide-react";
-import {
-    Sheet,
-    SheetContent,
-    SheetTrigger,
-    SheetHeader,
-    SheetTitle,
-} from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import Config from '@/config';
 import { scannerApi } from '@/lib/api_vmt';
-import { validateUrl, sanitizeString } from "@/lib/validation";
 
 // ═══════════════════════════════════════════
 // SCAN TYPE DEFINITIONS (Simplified to Wapiti Only)
@@ -446,17 +437,7 @@ export const Scanner = () => {
         }
 
         // Auto-normalize: add http:// if no scheme is provided
-        let normalizedUrl = targetUrl.trim();
-        if (normalizedUrl && !/^https?:\/\//i.test(normalizedUrl)) {
-            normalizedUrl = `http://${normalizedUrl}`;
-        }
-
-        if (!validateUrl(normalizedUrl)) {
-            setIsScanning(false);
-            toast({ title: "Invalid Target", description: "Please enter a valid URL or host.", variant: "destructive" });
-            return;
-        }
-
+        const normalizedUrl = /^https?:\/\//i.test(targetUrl.trim()) ? targetUrl.trim() : `http://${targetUrl.trim()}`;
         if (normalizedUrl !== targetUrl) setTargetUrl(normalizedUrl);
 
         if (authEnabled && (!loginUrl || !authUsername || !authPassword)) {
@@ -653,85 +634,47 @@ export const Scanner = () => {
             <nav className="h-16 border-b border-white/[0.04] bg-card/40 backdrop-blur-2xl sticky top-0 z-50 px-5 flex items-center justify-between shrink-0 relative">
                 <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
-                <div className="flex items-center gap-6">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
+                <div className="flex items-center gap-4">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-white/[0.04]" onClick={() => {
                             if (projectId) navigate(`/projects/${projectId}`);
                             else window.history.back();
-                        }}
-                        className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary gap-2 bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] h-8 px-4 rounded-xl transition-all hidden md:flex"
-                    >
-                        <ArrowLeft className="w-3 h-3" />
-                        Back to <span className="text-primary italic font-black">{projectId ? 'Project' : 'System'}</span>
-                    </Button>
-
+                        }}>
+                            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+                        </Button>
+                    </motion.div>
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/25">
-                                <Shield className="w-4 h-4 text-white" />
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/25">
+                                <Shield className="w-4.5 h-4.5 text-white" />
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-xs tracking-tight leading-none">VAPT Scanner</h1>
+                            <h1 className="font-bold text-sm tracking-tight leading-none">VAPT Scanner</h1>
                             <p className="text-[9px] text-muted-foreground/60 font-semibold uppercase tracking-[0.2em] mt-0.5">Shannon Engine v3.0</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     {/* Live status indicator */}
-                    <div className="hidden sm:block">
-                        <motion.div
-                            animate={isScanning ? { boxShadow: ['0 0 0 0 rgba(var(--primary), 0)', '0 0 0 8px rgba(var(--primary), 0.1)', '0 0 0 0 rgba(var(--primary), 0)'] } : {}}
-                            transition={{ duration: 2, repeat: Infinity }}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${isScanning
-                                ? 'bg-primary/5 border-primary/20 text-primary'
-                                : 'bg-white/[0.02] border-white/[0.06] text-muted-foreground/50'
-                                }`}
-                        >
-                            <span className={`w-2 h-2 rounded-full ${isScanning ? 'bg-primary animate-pulse' : 'bg-muted-foreground/20'}`} />
-                            <span className="text-[10px] font-bold tracking-wide uppercase">{isScanning ? 'Scanning' : 'Ready'}</span>
-                        </motion.div>
-                    </div>
-
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-white/[0.04] lg:hidden">
-                                <Menu className="w-5 h-5 text-muted-foreground" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="p-0 w-80 bg-background border-r border-white/5">
-                            <ScanHistoryPanel
-                                history={history}
-                                loading={historyLoading}
-                                activeScanId={currentScanId}
-                                onSelect={(scan) => handleSelectScan(scan)}
-                                onClear={handleClearHistory}
-                                onNewScan={handleNewScan}
-                                onDelete={handleDeleteScan}
-                            />
-                        </SheetContent>
-                    </Sheet>
+                    <motion.div
+                        animate={isScanning ? { boxShadow: ['0 0 0 0 rgba(var(--primary), 0)', '0 0 0 8px rgba(var(--primary), 0.1)', '0 0 0 0 rgba(var(--primary), 0)'] } : {}}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${isScanning
+                            ? 'bg-primary/5 border-primary/20 text-primary'
+                            : 'bg-white/[0.02] border-white/[0.06] text-muted-foreground/50'
+                            }`}
+                    >
+                        <span className={`w-2 h-2 rounded-full ${isScanning ? 'bg-primary animate-pulse' : 'bg-muted-foreground/20'}`} />
+                        <span className="text-[10px] font-bold tracking-wide uppercase">{isScanning ? 'Scanning' : 'Ready'}</span>
+                    </motion.div>
                 </div>
             </nav>
 
             {/* ── Main Layout: Sidebar + Workspace ── */}
             <div className="flex-1 flex overflow-hidden relative">
-                {/* LEFT: Sidebar (Desktop Only) */}
-                <aside className="hidden lg:block w-80 shrink-0 border-r border-white/[0.04] bg-card/20">
-                    <ScanHistoryPanel
-                        history={history}
-                        loading={historyLoading}
-                        activeScanId={currentScanId}
-                        onSelect={handleSelectScan}
-                        onClear={handleClearHistory}
-                        onNewScan={handleNewScan}
-                        onDelete={handleDeleteScan}
-                    />
-                </aside>
 
                 {/* RIGHT: Workspace */}
                 <div className="flex-1 overflow-y-auto relative">
@@ -777,25 +720,11 @@ export const Scanner = () => {
                             <>
 
                                 {/* ── Premium Hero Area ── */}
-                                <motion.div
-                                    initial="hidden"
-                                    animate="visible"
-                                    variants={{
-                                        hidden: { opacity: 0 },
-                                        visible: {
-                                            opacity: 1,
-                                            transition: {
-                                                staggerChildren: 0.1
-                                            }
-                                        }
-                                    }}
-                                    className="flex flex-col items-center text-center pb-8 pt-4"
-                                >
+                                <div className="flex flex-col items-center text-center pb-8 pt-4">
                                     <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, scale: 0.8 },
-                                            visible: { opacity: 1, scale: 1 }
-                                        }}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.5 }}
                                         className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-sky-500/20 p-px mb-6 shadow-2xl shadow-primary/20"
                                     >
                                         <div className="w-full h-full rounded-[15px] bg-card/80 backdrop-blur-xl flex items-center justify-center">
@@ -803,24 +732,22 @@ export const Scanner = () => {
                                         </div>
                                     </motion.div>
                                     <motion.h2
-                                        variants={{
-                                            hidden: { opacity: 0, y: 10 },
-                                            visible: { opacity: 1, y: 0 }
-                                        }}
-                                        className="text-3xl font-black tracking-tighter mb-3 uppercase"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.1 }}
+                                        className="text-3xl font-bold tracking-tight mb-3"
                                     >
-                                        VAPT <span className="text-primary">SCANNER</span>
+                                        Enterprise Web Scanner
                                     </motion.h2>
                                     <motion.p
-                                        variants={{
-                                            hidden: { opacity: 0, y: 10 },
-                                            visible: { opacity: 1, y: 0 }
-                                        }}
-                                        className="text-[11px] font-mono text-muted-foreground/50 max-w-md mx-auto uppercase tracking-widest"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        className="text-sm text-muted-foreground/60 max-w-md mx-auto"
                                     >
                                         Deep vulnerability analysis powered by Shannon Engine v3.0. Enter a target to begin active reconnaissance.
                                     </motion.p>
-                                </motion.div>
+                                </div>
 
                                 {/* ── Target Input Bar ── */}
                                 <motion.div
@@ -841,17 +768,17 @@ export const Scanner = () => {
                                         />
                                     )}
 
-                                    <div className="relative bg-black/40 backdrop-blur-2xl p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
-                                        <div className={`ml-1 sm:ml-3 w-10 sm:w-12 h-10 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-sky-500/30 to-primary/30 p-px shrink-0`}>
-                                            <div className="w-full h-full rounded-[10px] sm:rounded-[15px] bg-card/90 flex items-center justify-center backdrop-blur-md">
-                                                <Target className={`w-4 sm:w-5 h-4 sm:h-5 text-sky-400`} />
+                                    <div className="relative bg-black/40 backdrop-blur-2xl p-3 flex items-center gap-3">
+                                        <div className={`ml-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500/30 to-primary/30 p-px shrink-0`}>
+                                            <div className="w-full h-full rounded-[15px] bg-card/90 flex items-center justify-center backdrop-blur-md">
+                                                <Target className={`w-5 h-5 text-sky-400`} />
                                             </div>
                                         </div>
                                         <Input
                                             placeholder="https://target.api.com"
                                             value={targetUrl}
                                             onChange={(e) => setTargetUrl(e.target.value)}
-                                            className="flex-1 border-none shadow-none h-11 sm:h-14 text-sm sm:text-base focus-visible:ring-0 placeholder:text-muted-foreground/30 bg-transparent font-medium tracking-wide"
+                                            className="flex-1 border-none shadow-none h-14 text-base focus-visible:ring-0 placeholder:text-muted-foreground/30 bg-transparent font-medium tracking-wide"
                                             onKeyDown={(e) => e.key === 'Enter' && !isScanning && handleStartScan()}
                                             disabled={isScanning}
                                         />
@@ -859,14 +786,14 @@ export const Scanner = () => {
                                             <Button
                                                 onClick={isScanning ? handleStopScan : handleStartScan}
                                                 variant={isScanning ? "destructive" : "default"}
-                                                className={`h-10 sm:h-12 px-4 sm:px-8 text-xs sm:text-sm font-bold shadow-2xl rounded-lg sm:rounded-xl transition-all mr-1 ${isScanning
+                                                className={`h-12 px-8 text-sm font-bold shadow-2xl rounded-xl transition-all mr-1 ${isScanning
                                                     ? 'bg-red-500/80 hover:bg-red-500 shadow-red-500/20'
                                                     : `bg-gradient-to-r from-sky-500 to-primary hover:opacity-90 shadow-primary/20`
                                                     }`}
                                             >
                                                 {isScanning
-                                                    ? <><Square className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-2 fill-current" /> Terminate</>
-                                                    : <><Play className="w-3.5 sm:w-4 h-3.5 sm:h-4 mr-2 fill-current" /> Launch</>
+                                                    ? <><Square className="w-4 h-4 mr-2 fill-current" /> Terminate</>
+                                                    : <><Play className="w-4 h-4 mr-2 fill-current" /> Launch Scan</>
                                                 }
                                             </Button>
                                         </motion.div>

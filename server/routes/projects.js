@@ -527,6 +527,7 @@ router.delete('/:id/evidence/:filename', (req, res) => {
 // GET /api/projects/:id/reports/:filename — Download Report
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/:id/reports/:filename', (req, res) => {
+    console.log(`[Project Route] Report Download requested for file: ${req.params.filename}`);
     try {
         const { id, filename } = req.params;
         const reportPath = path.join(PROJECTS_DIR, id, 'reports', filename);

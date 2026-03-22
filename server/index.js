@@ -105,6 +105,7 @@ app.use('/api/projects/:projectId/evidence', optionalAuth, async (req, res, next
 
 // Serve generated project reports for download
 app.use('/api/projects/:projectId/reports', optionalAuth, async (req, res, next) => {
+    console.log(`[Report Download] Request: ${req.url} for Project: ${req.params.projectId}`);
     if (!req.path || req.path === '/' || req.path === '') return next();
 
     const { projectId } = req.params;
@@ -112,6 +113,7 @@ app.use('/api/projects/:projectId/reports', optionalAuth, async (req, res, next)
     // ── Ownership Check ──
     try {
         const projectInfoPath = path.join(__dirname, 'data', 'projects', projectId, 'project_info.json');
+        console.log(`[Report Download] Checking ownership: ${projectInfoPath}`);
         if (fs.existsSync(projectInfoPath)) {
             const info = JSON.parse(fs.readFileSync(projectInfoPath, 'utf8'));
             const projectOwner = info.userId || 'anonymous';
@@ -126,7 +128,12 @@ app.use('/api/projects/:projectId/reports', optionalAuth, async (req, res, next)
     }
 
     express.static(
-        path.join(__dirname, 'data', 'projects', projectId, 'reports')
+        path.join(__dirname, 'data', 'projects', projectId, 'reports'),
+        {
+            setHeaders: (res, filePath) => {
+                res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+            }
+        }
     )(req, res, next);
 });
 
