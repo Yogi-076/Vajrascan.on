@@ -384,7 +384,7 @@ export default function ProjectDetails() {
                                                         a.download = `raw_scan_${scan.id}.json`;
                                                         document.body.appendChild(a);
                                                         a.click();
-                                                        window.URL.revokeObjectURL(url);
+                                                        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
                                                         document.body.removeChild(a);
                                                         toast({ title: "Downloaded", description: "Raw scan results downloaded." });
                                                     } catch (err: any) {

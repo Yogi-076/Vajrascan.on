@@ -87,7 +87,7 @@ export function ReportGenerator({ projectId, projectTitle, currentVersion = 0, o
             if (!res.ok) throw new Error("Failed to generate report");
 
             const data = await res.json();
-            const url = `${Config.API_URL}/api/projects/${projectId}/reports/${data.filename}`;
+            const url = `${Config.API_URL}/api/projects/${projectId}/reports/${data.filename}${token ? `?token=${token}` : ''}`;
             setDownloadUrl(url);
             setGeneratedFilename(data.filename);
 
