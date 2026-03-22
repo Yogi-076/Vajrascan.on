@@ -82,10 +82,30 @@ router.post('/generate', async (req, res) => {
         console.log("[1] Launching headless browser...");
         browser = await puppeteer.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-first-run',
+                '--single-process'
+            ]
         });
 
         const page = await browser.newPage();
+        page.setDefaultNavigationTimeout(30000);
+        page.setDefaultTimeout(30000);
+
+        // Block ALL external network requests so we never hang
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            const url = req.url();
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+                req.abort(); // block external resources (fonts, CDN, etc)
+            } else {
+                req.continue();
+            }
+        });
         
         const htmlContent = generateReportHTML({
             projectInfo,
@@ -97,7 +117,7 @@ router.post('/generate', async (req, res) => {
         });
 
         console.log("[2] Setting page content...");
-        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
         console.log("[3] Generating PDF...");
         await page.pdf({

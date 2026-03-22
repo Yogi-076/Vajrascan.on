@@ -35,8 +35,6 @@ const generateReportHTML = (data) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VAPT Report - ${projectInfo.companyName}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-        
         :root {
             --primary: #38bdf8;
             --secondary: #0f172a;
@@ -54,7 +52,7 @@ const generateReportHTML = (data) => {
         }
 
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
             color: var(--text-main);
             line-height: 1.6;
             background: var(--bg);
@@ -274,7 +272,7 @@ const generateReportHTML = (data) => {
             color: #e2e8f0;
             padding: 15px;
             border-radius: 8px;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'Courier New', Courier, monospace;
             font-size: 12px;
             overflow-x: auto;
             margin: 10px 0;
@@ -405,7 +403,7 @@ const generateReportHTML = (data) => {
                 </div>
 
                 <span class="section-label">AFFECTED ENDPOINT</span>
-                <div style="font-family: 'JetBrains Mono'; font-size: 13px; color: var(--accent); white-space: pre-wrap; word-break: break-all;">${f.url || f.path || 'Infrastructure-wide'}</div>
+                <div style="font-family: 'Courier New', Courier, monospace; font-size: 13px; color: var(--accent); white-space: pre-wrap; word-break: break-all;">${f.url || f.path || 'Infrastructure-wide'}</div>
 
                 <span class="section-label">DESCRIPTION & IMPACT</span>
                 <p>${f.description || 'Detailed security description not provided.'}</p>
