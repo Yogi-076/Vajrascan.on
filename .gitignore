@@ -83,6 +83,19 @@ commit_stat.txt
 temp_report.json
 temp_help.txt
 test_output_abs.json
+# Databases
+*.sqlite
+*.db
+server/db/*.sqlite
+server/db/*.db
+server/db/
+
+# Data
+server/data/
+server/data/*
+server/data/**/*
+
+# Crawler data
 crawler.txt
 crawler_f.txt
 pcheck.txt
