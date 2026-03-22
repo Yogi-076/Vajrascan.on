@@ -27,8 +27,9 @@ class ForreconService {
         }
 
         // Use compiled binary for stability and performance
-        // If binary doesn't exist, fall back to go run (or just error out)
-        const binaryPath = path.join(__dirname, '../tools/forrecon/forrecon.exe');
+        const isWin = process.platform === "win32";
+        const executableName = isWin ? 'forrecon.exe' : 'forrecon';
+        const binaryPath = path.join(__dirname, `../tools/forrecon/${executableName}`);
         let cmd = binaryPath;
         let args = [
             '-url', targetUrl,
