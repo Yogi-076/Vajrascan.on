@@ -65,38 +65,10 @@ export function ReportGenerator({ projectId, projectTitle, currentVersion = 0, o
         }
     };
 
-    const handleDownload = async () => {
+    const handleDownload = () => {
         if (!generatedFilename) return;
         setIsDownloading(true);
-        try {
-            const token = localStorage.getItem('vmt_token');
-            const url = `${Config.API_URL}/api/projects/${projectId}/reports/${generatedFilename}`;
-            const res = await fetch(url, {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-
-            if (!res.ok) throw new Error("File not found on server");
-
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = generatedFilename;
-            document.body.appendChild(a);
-            a.click();
-            
-            // Fix: Delay cleanup to prevent Chromium race condition which drops the filename and saves as UUID
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(blobUrl);
-            }, 1000);
-
-            toast({ title: "📥 Downloading...", description: generatedFilename });
-        } catch (e: any) {
-            toast({ variant: "destructive", title: "Download Failed", description: e.message });
-        } finally {
-            setIsDownloading(false);
-        }
+        setTimeout(() => setIsDownloading(false), 2000); // UI reset
     };
 
     const handleClose = () => {
@@ -157,16 +129,22 @@ export function ReportGenerator({ projectId, projectTitle, currentVersion = 0, o
                             }
                         </Button>
                     ) : (
-                        <Button
-                            disabled={isDownloading}
+                        <a
+                            href={`${Config.API_URL}/api/projects/${projectId}/reports/${encodeURIComponent(generatedFilename)}`}
+                            download={generatedFilename}
+                            className="flex-1 w-full"
                             onClick={handleDownload}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 flex-1"
                         >
-                            {isDownloading
-                                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Downloading...</>
-                                : <><Download className="w-4 h-4 mr-2" /> Download PDF</>
-                            }
-                        </Button>
+                            <Button
+                                disabled={isDownloading}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20"
+                            >
+                                {isDownloading
+                                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Downloading...</>
+                                    : <><Download className="w-4 h-4 mr-2" /> Download PDF</>
+                                }
+                            </Button>
+                        </a>
                     )}
                 </DialogFooter>
             </DialogContent>
