@@ -221,12 +221,15 @@ class WapitiService {
             return new Promise((resolve, reject) => {
                 this.addLog(scanId, `Executing DAST Scan...`);
 
-                console.log("SPAWN DEBUG:", { spawnCmd, spawnArgs, spawnCwd });
-                const child = spawn(spawnCmd, spawnArgs, {
-                    cwd: spawnCwd,
-                    shell: false,
-                    env: process.env
-                });
+            // Isolate Wapiti's SQLite DB to prevent "readonly database" errors or concurrent locks
+            const childEnv = { ...process.env, HOME: tempDir };
+            
+            console.log("SPAWN DEBUG:", { spawnCmd, spawnArgs, spawnCwd, HOME: tempDir });
+            const child = spawn(spawnCmd, spawnArgs, {
+                cwd: spawnCwd,
+                shell: false,
+                env: childEnv
+            });
 
                 // Track process for potential cancellation
                 this.activeProcesses.set(scanId, {
