@@ -104,46 +104,6 @@ app.use('/api/projects/:projectId/evidence', optionalAuth, async (req, res, next
     })(req, res, next);
 });
 
-// Serve generated project reports for download
-app.use('/api/projects/:projectId/reports', optionalAuth, async (req, res, next) => {
-    if (!req.path || req.path === '/' || req.path === '') return next();
-
-    const { projectId } = req.params;
-
-    // ── Ownership Check ──
-    try {
-        const projectInfoPath = path.join(__dirname, 'data', 'projects', projectId, 'project_info.json');
-        if (fs.existsSync(projectInfoPath)) {
-            const info = JSON.parse(fs.readFileSync(projectInfoPath, 'utf8'));
-            const projectOwner = info.userId || 'anonymous';
-            if (projectOwner !== req.userId && projectOwner !== 'anonymous') {
-                return res.status(403).json({ error: 'Access denied to this project\'s reports' });
-            }
-        } else if (projectId !== 'manual-project-default') {
-            return res.status(404).json({ error: 'Project not found' });
-        }
-    } catch (e) {
-        return res.status(500).json({ error: 'Storage error verify ownership' });
-    }
-
-    const filename = path.basename(decodeURIComponent(req.path));
-    const reportPath = path.join(__dirname, 'data', 'projects', projectId, 'reports', filename);
-
-    if (fs.existsSync(reportPath)) {
-        return res.download(reportPath, filename, (err) => {
-            if (err) {
-                console.error(`[Report Download] Error sending file: ${err.message}`);
-                if (!res.headersSent) {
-                    res.status(500).json({ error: 'Error downloading report' });
-                }
-            }
-        });
-    } else {
-        console.warn(`[Report Download] File not found: ${reportPath}`);
-        return res.status(404).json({ error: 'Report file not found' });
-    }
-});
-
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/admin', adminRoutes);
 app.use('/api/projects', projectRoutes);
