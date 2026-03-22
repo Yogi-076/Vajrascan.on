@@ -31,6 +31,27 @@ const readJsonSafe = (filePath) => {
 };
 
 // ═══════════════════════════════════════════
+// GET /api/reports/raw/:projectId/:scanId
+// Download raw JSON findings for a specific scan
+// ═══════════════════════════════════════════
+router.get('/raw/:projectId/:scanId', (req, res) => {
+    try {
+        const { projectId, scanId } = req.params;
+        const resultsPath = path.join(DATA_DIR, 'projects', projectId, 'scans', scanId, 'results.json');
+        
+        if (!fs.existsSync(resultsPath)) {
+            return res.status(404).json({ error: "Raw scan results not found" });
+        }
+        
+        const filename = `raw_scan_${scanId}.json`;
+        res.download(resultsPath, filename);
+    } catch (err) {
+        console.error("Raw Scan Download Error:", err);
+        res.status(500).json({ error: "Failed to download raw scan results" });
+    }
+});
+
+// ═══════════════════════════════════════════
 // POST /api/reports/generate
 // Generates a VAPT report for a specific project
 // ═══════════════════════════════════════════
