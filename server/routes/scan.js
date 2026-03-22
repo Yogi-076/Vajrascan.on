@@ -28,15 +28,10 @@ router.post('/api/scan/start', optionalAuth, requireModule('dast_core'), async (
         // Auto-add scheme if missing (so users can type bare domains like testfire.net)
         if (!/^https?:\/\//i.test(target)) target = `http://${target}`;
 
-<<<<<<< HEAD
         target = sanitizeString(target, 500);
         if (!validateUrl(target)) {
             return res.status(400).json({ error: `Invalid target URL format: ${target}` });
         }
-=======
-        // Validate the normalized URL
-        try { new URL(target); } catch (e) { return res.status(400).json({ error: `Invalid target URL: ${target}` }); }
->>>>>>> deploy_fix
 
         const scanId = uuidv4();
         const tool = (req.body.options?.tool || req.body.tool || 'wapiti').toLowerCase();

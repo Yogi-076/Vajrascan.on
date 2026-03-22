@@ -126,7 +126,7 @@ app.use('/api/projects/:projectId/reports', optionalAuth, async (req, res, next)
         return res.status(500).json({ error: 'Storage error verify ownership' });
     }
 
-    const filename = path.basename(req.path);
+    const filename = path.basename(decodeURIComponent(req.path));
     const reportPath = path.join(__dirname, 'data', 'projects', projectId, 'reports', filename);
 
     if (fs.existsSync(reportPath)) {

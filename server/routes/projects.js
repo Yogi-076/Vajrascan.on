@@ -523,19 +523,7 @@ router.delete('/:id/evidence/:filename', (req, res) => {
     }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/projects/:id/reports/:filename — Download Report
-// ─────────────────────────────────────────────────────────────────────────────
-router.get('/:id/reports/:filename', (req, res) => {
-    try {
-        const { id, filename } = req.params;
-        const reportPath = path.join(PROJECTS_DIR, id, 'reports', filename);
-        if (!fs.existsSync(reportPath)) return res.status(404).json({ error: 'Report not found' });
-        res.download(reportPath, filename);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to download report' });
-    }
-});
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/projects/:id/scans/:scanId — Delete Specific Scan
