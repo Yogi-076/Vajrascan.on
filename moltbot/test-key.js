@@ -1,4 +1,4 @@
-const apiKey = "AIzaSyBPTeXSoUpvHRXf78G0AHl0PHv45zONc_0";
+const apiKey = "AIzaSyAH2FoNnigU2DElGBhrzHGITF13DLFkGJs";
 // Note: API expects "models/gemini-2.0-flash" or just "gemini-2.0-flash" depending on endpoint.
 // For v1beta/models/...:generateContent it usually takes the ID.
 const modelId = "gemini-flash-latest";

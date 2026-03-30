@@ -50,7 +50,7 @@ class MoltbotManager {
             ...process.env,
             MOLTBOT_STATE_DIR: path.resolve(this.moltbotPath, '../moltbot-data'),
             CLAWDBOT_GATEWAY_TOKEN: 'moltbot',
-            GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || 'AIzaSyBPTeXSoUpvHRXf78G0AHl0PHv45zONc_0',
+            GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || 'AIzaSyAH2FoNnigU2DElGBhrzHGITF13DLFkGJs',
             // Force specific model if needed by Moltbot internal logic, though usually it defaults well.
             // set CLAWDBOT_MODEL_PROVIDER=google if supported
         };

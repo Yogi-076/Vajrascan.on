@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 async function testGemini() {
-    const apiKey = "AIzaSyBPTeXSoUpvHRXf78G0AHl0PHv45zONc_0"; // Key from start-pluto.bat
+    const apiKey = "AIzaSyAH2FoNnigU2DElGBhrzHGITF13DLFkGJs"; // Key from start-pluto.bat
     const modelName = "gemini-flash-latest"; // Model from aiService.js
 
     console.log("Testing Gemini Connection...");

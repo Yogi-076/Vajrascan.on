@@ -25,7 +25,7 @@ echo Starting Moltbot Gateway on port 18789...
 echo.
 
 :: Set Google API Key for Strix
-set "GEMINI_API_KEY=AIzaSyCQLk19t0hthmA7t-ZKBA9E-_TPR1wVTks"
+set "GEMINI_API_KEY=AIzaSyAH2FoNnigU2DElGBhrzHGITF13DLFkGJs"
 
 :: Run Moltbot with required flags and Node options
 :: Launch the Persistent Agent (in background/new window) to handle "main" session

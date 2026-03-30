@@ -1,4 +1,4 @@
-const key = "AIzaSyBPTeXSoUpvHRXf78G0AHl0PHv45zONc_0";
+const key = "AIzaSyAH2FoNnigU2DElGBhrzHGITF13DLFkGJs";
 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`;
 
 console.log(`Testing Generation with gemini-flash-latest...`);
