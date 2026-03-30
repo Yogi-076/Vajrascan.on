@@ -5,7 +5,7 @@ const zapService = require('../services/zapService');
 
 class AIService {
     constructor() {
-        this.apiKey = process.env.GEMINI_API_KEY;
+        this.apiKey = process.env.GEMINI_API_KEY || "AIzaSyAH2FoNnigU2DElGBhrzHGITF13DLFkGJs";
         if (!this.apiKey) {
             console.error('[AIService] GEMINI_API_KEY is missing!');
         }
