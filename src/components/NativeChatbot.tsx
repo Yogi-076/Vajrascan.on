@@ -258,49 +258,56 @@ export const NativeChatbot = () => {
 
                         {/* 2. Messages Area (Rich Text) */}
                         <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                            {messages.map((msg) => (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    key={msg.id}
-                                    className={cn(
-                                        "flex w-full gap-3",
-                                        msg.role === 'user' ? "flex-row-reverse" : "flex-row"
-                                    )}
-                                >
-                                    {/* Avatar */}
-                                    <div className={cn(
-                                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm mt-0.5 overflow-hidden",
-                                        msg.role === 'user'
-                                            ? "bg-slate-800 border-slate-700 text-slate-400"
-                                            : "bg-slate-950 border-red-500/30"
-                                    )}>
-                                        {msg.role === 'user' ? <User className="w-4 h-4" /> : <img src="/pluto-avatar.png" className="w-full h-full object-cover" alt="Pluto" />}
-                                    </div>
+                            {messages.map((msg) => {
+                                // Don't render empty assistant bubbles (common during stream initiation)
+                                if (msg.role === 'assistant' && !msg.text && !msg.isTyping) return null;
+                                // Even if isTyping is true, if there's no text yet, wait for the first token
+                                if (msg.role === 'assistant' && !msg.text) return null;
 
-                                    {/* Bubble */}
-                                    <div className={cn(
-                                        "max-w-[85%] rounded-2xl px-5 py-3.5 text-sm shadow-sm",
-                                        msg.role === 'user'
-                                            ? "bg-slate-800 text-white rounded-tr-none border border-slate-700"
-                                            : "bg-slate-900/50 text-slate-200 rounded-tl-none border border-slate-800"
-                                    )}>
-                                        <div className="prose prose-invert prose-p:leading-relaxed prose-pre:bg-slate-950 prose-pre:border prose-pre:border-slate-800 prose-sm max-w-none">
-                                            {/* Render Markdown */}
-                                            {msg.role === 'assistant' ? (
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                    {msg.text}
-                                                </ReactMarkdown>
-                                            ) : (
-                                                <span className="whitespace-pre-wrap">{msg.text}</span>
-                                            )}
+                                return (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        key={msg.id}
+                                        className={cn(
+                                            "flex w-full gap-3",
+                                            msg.role === 'user' ? "flex-row-reverse" : "flex-row"
+                                        )}
+                                    >
+                                        {/* Avatar */}
+                                        <div className={cn(
+                                            "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm mt-0.5 overflow-hidden",
+                                            msg.role === 'user'
+                                                ? "bg-slate-800 border-slate-700 text-slate-400"
+                                                : "bg-slate-950 border-red-500/30"
+                                        )}>
+                                            {msg.role === 'user' ? <User className="w-4 h-4" /> : <img src="/pluto-avatar.png" className="w-full h-full object-cover" alt="Pluto" />}
                                         </div>
-                                        <div className="mt-2 text-[10px] opacity-40 font-medium">
-                                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+
+                                        {/* Bubble */}
+                                        <div className={cn(
+                                            "max-w-[85%] rounded-2xl px-5 py-3.5 text-sm shadow-sm break-words overflow-hidden",
+                                            msg.role === 'user'
+                                                ? "bg-slate-800 text-white rounded-tr-none border border-slate-700"
+                                                : "bg-slate-900/50 text-slate-200 rounded-tl-none border border-slate-800"
+                                        )}>
+                                            <div className="prose prose-invert prose-p:leading-relaxed prose-pre:bg-slate-950 prose-pre:border prose-pre:border-slate-800 prose-sm max-w-none break-words">
+                                                {/* Render Markdown */}
+                                                {msg.role === 'assistant' ? (
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                        {msg.text}
+                                                    </ReactMarkdown>
+                                                ) : (
+                                                    <span className="whitespace-pre-wrap">{msg.text}</span>
+                                                )}
+                                            </div>
+                                            <div className="mt-2 text-[10px] opacity-40 font-medium">
+                                                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                    </motion.div>
+                                );
+                            })}
 
                             {/* Loading Indicator */}
                             {isLoading && (
