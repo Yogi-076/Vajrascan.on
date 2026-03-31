@@ -1,128 +1,162 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const axios = require('axios');
 const storage = require('../utils/storage');
-const wapitiService = require('../services/wapitiService');
-const zapService = require('../services/zapService');
 
+/**
+ * AIService — Refactored for Ollama-Only Infrastructure
+ * Handles all AI interactions for Pluto assistant and security tools.
+ */
 class AIService {
     constructor() {
-        this.apiKey = process.env.GEMINI_API_KEY || "AIzaSyAH2FoNnigU2DElGBhrzHGITF13DLFkGJs";
-        if (!this.apiKey) {
-            console.error('[AIService] GEMINI_API_KEY is missing!');
-        }
-
-        // Initialize Gemini if key exists
-        if (this.apiKey) {
-            this.genAI = new GoogleGenerativeAI(this.apiKey);
-            // Use gemini-flash-latest which is confirmed working for this key
-            this.genAI = new GoogleGenerativeAI(this.apiKey);
-            this.modelName = "gemini-1.5-flash"; // Default
-            this.modelsToTry = ["gemini-2.0-flash", "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-flash-latest", "gemini-1.5-pro", "gemini-pro"];
-        }
-
-        this.chatSessions = new Map();
+        this.ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+        this.ollamaModel = process.env.OLLAMA_MODEL || 'gemma2:2b';
+        this.ollamaHistory = new Map();
+        
+        console.log(`[AIService] Optimized (Gemma2:2B). URL: ${this.ollamaUrl}, Model: ${this.ollamaModel}`);
     }
 
-    async processMessage(sessionId, message, context = {}) {
+    /** Process a chat message with full VAPT context and session history. */
+    async processMessage(sessionId, message, context = {}, res = null) {
         try {
-            if (!this.apiKey) {
-                return this.mockResponse("⚠️ System Error: Gemini API Key is missing. Please configure GEMINI_API_KEY in the .env file.");
-            }
+            console.log(`[AIService] Sending message to Ollama (Session: ${sessionId}, Model: ${this.ollamaModel})`);
+            
+            // 1. Precise VAPT System Context
+            const systemContext = `You are Pluto, the AI Security Analyst for the VajraScan framework.
+Your goal is to provide technical, professional, and accurate security analysis.
 
-            // Get or create chat session
-            // Get or create chat session
-            let chat = this.chatSessions.get(sessionId);
-            if (!chat) {
-                // Try initializing with fallback models
-                for (const modelName of this.modelsToTry) {
-                    try {
-                        const model = this.genAI.getGenerativeModel({
-                            model: modelName,
-                            systemInstruction: "You are Pluto, an advanced AI Security Analyst for the VAPT Framework..."
-                        });
-
-                        // Validating model by checking basic chat start (API doesn't validate until first call usually)
-                        // But let's assume if startChat works, we are good? No, checking logic inside loop
-
-                        chat = model.startChat({
-                            history: [
-                                { role: "user", parts: [{ text: "System: Initialize Security Analyst Persona." }] },
-                                { role: "model", parts: [{ text: "Pluto AI Online. Ready to assist." }] },
-                            ],
-                        });
-
-                        this.chatSessions.set(sessionId, chat);
-                        this.modelName = modelName;
-                        console.log(`[AIService] Successfully initialized with model: ${modelName}`);
-                        break; // Success
-                    } catch (e) {
-                        console.warn(`[AIService] Failed to init model ${modelName}: ${e.message}`);
-                    }
-                }
-
-                if (!chat) return this.mockResponse("⚠️ Failed to initialize AI session with any available Gemini model.");
-            }
-
-            // Construct Contextual Prompt
-            let systemContext = "";
-            let recentScans = [];
+STRICT CONSTRAINTS:
+- NEVER use conversational filler or personal greetings like "Hey there", "Pluto here", or "Bye!".
+- Directly answer the user's technical question or command.
+- If the user says "hello", respond with: "Hello. I am Pluto. I can assist you with vulnerability analysis, report generation, or system status. How shall we proceed?"
+- Prioritize technical accuracy and concise remediation steps.`;
+            
+            // 2. Fetch Recent Scan Context (Optimized)
+            let scanSummary = "";
             try {
-                recentScans = await storage.getAllScans();
-                if (recentScans && Array.isArray(recentScans)) {
-                    recentScans = recentScans.slice(0, 3);
-                } else {
-                    recentScans = [];
+                const recentScans = (await storage.getAllScans() || []).slice(0, 2);
+                if (recentScans.length > 0) {
+                    scanSummary = "\n[Current Scan Context]: " + recentScans.map(s => `${s.target}(${s.status})`).join(", ");
                 }
-            } catch (e) {
-                console.warn('[AIService] Failed to retrieve scan context:', e.message);
-                recentScans = [];
-            }
+            } catch (e) {}
 
-            if (recentScans.length > 0) {
-                systemContext += "\n[Current System State]: \n";
-                recentScans.forEach(scan => {
-                    systemContext += `- Scan ${scan.id ? scan.id.substring(0, 6) : 'Unknown'} (${scan.type}) on ${scan.target}: Status=${scan.status}, Findings=${scan.findings?.length || 0}\n`;
+            // 3. Manage Chat History
+            const history = this.ollamaHistory.get(sessionId) || [];
+            history.push({ role: 'user', content: message });
+
+            // 4. Send Request to Ollama Chat API with Optimization Parameters
+            const requestOptions = res ? { responseType: 'stream' } : {};
+            const response = await axios.post(`${this.ollamaUrl}/api/chat`, {
+                model: this.ollamaModel,
+                messages: [
+                    { role: 'system', content: systemContext + scanSummary },
+                    ...history
+                ],
+                stream: !!res,
+                options: {
+                    temperature: 0.1,      // Minimize hallucinations
+                    num_predict: 512,      // Prevent truncation mid-sentence
+                    num_ctx: 2048,         // Reasonable context for security discussion
+                    top_k: 40,
+                    top_p: 0.9
+                }
+            }, requestOptions);
+
+            if (res) {
+                let fullReply = '';
+                let buffer = '';
+                
+                // Read from the stream
+                response.data.on('data', (chunk) => {
+                    buffer += chunk.toString();
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // last part might be incomplete
+                    
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const parsed = JSON.parse(line);
+                            if (parsed.message && parsed.message.content) {
+                                fullReply += parsed.message.content;
+                                res.write(`data: ${JSON.stringify({ text: parsed.message.content })}\n\n`);
+                            }
+                        } catch (e) {
+                            // ignore parse error for specific line
+                        }
+                    }
                 });
+
+                return new Promise((resolve, reject) => {
+                    response.data.on('end', () => {
+                        // process any remaining buffer
+                        if (buffer.trim()) {
+                            try {
+                                const parsed = JSON.parse(buffer);
+                                if (parsed.message && parsed.message.content) {
+                                    fullReply += parsed.message.content;
+                                    res.write(`data: ${JSON.stringify({ text: parsed.message.content })}\n\n`);
+                                }
+                            } catch (e) {}
+                        }
+                        history.push({ role: 'assistant', content: fullReply });
+                        if (history.length > 20) history.splice(0, 2);
+                        this.ollamaHistory.set(sessionId, history);
+                        
+                        res.write('data: [DONE]\n\n');
+                        res.end();
+                        resolve({ text: fullReply });
+                    });
+                    response.data.on('error', (err) => {
+                        console.error('[AIService] Stream error:', err);
+                        res.end();
+                        reject(err);
+                    });
+                });
+            } else {
+                const reply = response.data.message.content;
+                history.push({ role: 'assistant', content: reply });
+                
+                // 5. Limit history size to prevent context overflow (10 turns)
+                if (history.length > 20) history.splice(0, 2);
+                this.ollamaHistory.set(sessionId, history);
+
+                return { text: reply };
             }
-
-            const fullPrompt = message + (systemContext ? `\n\n${systemContext}` : "");
-
-            console.log(`[AIService] Sending message to Gemini (Session: ${sessionId})`);
-
-            // Try sending message
-            const result = await chat.sendMessage(fullPrompt);
-            const response = await result.response;
-            return { text: response.text() };
 
         } catch (error) {
-            console.error('[AIService] Gemini Error:', error.message);
-            // Fallback to Mock Response explicitly on any error (404, 403, 500)
-            return this.mockResponse(null, message);
+            console.error('[AIService] Ollama Error:', error.message);
+            
+            const errMsg = error.code === 'ECONNREFUSED' 
+                ? "⚠️ **Pluto Error:** Ollama is unreachable. Ensure the Ollama service is running on the VPS."
+                : "**Pluto (Offline/Errored):** I encountered an issue while processing your request. Please check technical logs or the Ollama service status.";
+
+            if (res) {
+                res.write(`data: ${JSON.stringify({ text: errMsg })}\n\n`);
+                res.write('data: [DONE]\n\n');
+                res.end();
+                return { text: errMsg };
+            }
+            
+            return { text: errMsg };
         }
     }
 
-    // Mock/Rule-based responses for offline mode
-    mockResponse(errorMsg, userMessage) {
-        if (errorMsg) return { text: errorMsg };
-
-        const msg = (userMessage || "").toLowerCase();
-
-        // Simple heuristic responses
-        if (msg.includes('hello') || msg.includes('hi')) {
-            return { text: "**Pluto (Offline Mode):**\nHello! I am currently running in offline resiliency mode because the Gemini API is unreachable (Error 404/403). \n\nI can still help you:\n- **Start a scan** (Type: 'scan example.com')\n- **Check status** (Type: 'status')" };
+    /** Generic response generator for one-off tasks (CVSS, Findings, ELI5). */
+    async generateResponse(prompt) {
+        try {
+            const response = await axios.post(`${this.ollamaUrl}/api/generate`, {
+                model: this.ollamaModel,
+                prompt: prompt,
+                stream: false
+            });
+            return response.data.response;
+        } catch (e) {
+            console.error('[AIService] generateResponse error:', e.message);
+            return "Local AI service currently unavailable for automated finding generation.";
         }
-        if (msg.includes('scan')) {
-            return { text: "**Pluto (Offline Mode):**\nTo start a scan, please use the Dashboard 'New Scan' button, or ensure your API Key is valid to enable voice commands." };
-        }
-        if (msg.includes('status')) {
-            return { text: "**Pluto (Offline Mode):**\nI cannot perform live checks offline, but you can view the Scan History panel on the left." };
-        }
-
-        return { text: "**Pluto (Offline Mode):**\nI received your message: _\"" + userMessage + "\"_\n\nHowever, I cannot process complex queries without the Gemini API connection. Please check your API Key configuration." };
     }
 
-    // Function to clear history if needed
+    /** Clear a specific chat session's history. */
     clearSession(sessionId) {
-        this.chatSessions.delete(sessionId);
+        this.ollamaHistory.delete(sessionId);
     }
 }
 

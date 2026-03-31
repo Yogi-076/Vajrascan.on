@@ -68,29 +68,90 @@ export const NativeChatbot = () => {
         setInputValue('');
         setIsLoading(true);
 
+        const botMsgId = (Date.now() + 1).toString();
+        setMessages(prev => [...prev, {
+            id: botMsgId,
+            role: 'assistant',
+            text: '',
+            timestamp: new Date(),
+            isTyping: true
+        }]);
+
+        let fullText = '';
+
         try {
-            const response = await axios.post(`${Config.API_URL}/api/chat`, {
-                message: userMsg.text,
-                sessionId: user?.id || 'guest-session'
+            const response = await fetch(`${Config.API_URL}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: userMsg.text,
+                    sessionId: user?.id || 'guest-session'
+                })
             });
 
-            const botMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                text: response.data.text,
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, botMsg]);
+            if (!response.body) throw new Error('No readable stream available');
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let done = false;
+            let buffer = '';
+            
+            // Stream has started, hide the pulsing bubble
+            setIsLoading(false);
+
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+
+                if (value) {
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || ''; // keep the last incomplete line
+
+                    for (const line of lines) {
+                        if (line.trim() === '') continue;
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data.trim() === '[DONE]') {
+                                done = true;
+                                break;
+                            }
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.text) {
+                                    fullText += parsed.text;
+                                    setMessages(prev => 
+                                        prev.map(msg => 
+                                            msg.id === botMsgId 
+                                                ? { ...msg, text: fullText }
+                                                : msg
+                                        )
+                                    );
+                                }
+                            } catch (e) {
+                                // Ignore incomplete JSON payload fragments
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // finalize stream decode and remove typing flag
+            setMessages(prev => 
+                prev.map(msg => 
+                    msg.id === botMsgId 
+                        ? { ...msg, isTyping: false }
+                        : msg
+                )
+            );
 
         } catch (error) {
             console.error('Chat error:', error);
-            const errorMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                text: '⚠️ **Connection Error**: I could not reach the Gemini API. \n\nPlease check your network or API Key.',
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMsg]);
+            setMessages(prev => prev.map(msg => 
+                msg.id === botMsgId
+                    ? { ...msg, text: fullText ? fullText + '\n\n⚠️ **Connection Error**: Stream interrupted.' : '⚠️ **Connection Error**: I could not reach the AI service.', isTyping: false }
+                    : msg
+            ));
         } finally {
             setIsLoading(false);
         }
@@ -310,7 +371,7 @@ export const NativeChatbot = () => {
 
                             <div className="text-center">
                                 <span className="text-[10px] text-slate-600 bg-slate-900/50 px-2 py-0.5 rounded-full border border-white/5">
-                                    Powered by <strong>Gemini 1.5 Flash</strong> &bull; VAPT Framework v2.0
+                                    Powered by <strong>Ollama (Local AI)</strong> &bull; VAPT Framework v2.0
                                 </span>
                             </div>
                         </div>

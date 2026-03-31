@@ -14,16 +14,22 @@ const { VAPT_SYSTEM_PROMPT } = require('../config/vapt_system_prompt');
 const MOLTBOT_URL = 'http://localhost:18789/v1/chat/completions';
 const MOLTBOT_HEADERS = { Authorization: 'Bearer moltbot' };
 
-/** Call Moltbot with a prompt. Returns the text content or null. */
+/** Call Moltbot with a prompt. Falls back to AIService (Ollama-Only) if Moltbot is unavailable. */
 async function callMoltbot(prompt) {
-    const response = await axios.post(MOLTBOT_URL,
-        { model: 'moltbot', messages: [{ role: 'user', content: prompt }] },
-        { headers: MOLTBOT_HEADERS }
-    );
-    return response.data.choices?.[0]?.message?.content
-        || response.data.reply
-        || response.data.message
-        || null;
+    try {
+        const response = await axios.post(MOLTBOT_URL,
+            { model: 'moltbot', messages: [{ role: 'user', content: prompt }] },
+            { headers: MOLTBOT_HEADERS, timeout: 5000 }
+        );
+        return response.data.choices?.[0]?.message?.content
+            || response.data.reply
+            || response.data.message
+            || null;
+    } catch (error) {
+        console.warn(`[AI Routes] Moltbot unavailable, falling back to local Ollama service: ${error.message}`);
+        // Fallback to local Ollama service
+        return await aiService.generateResponse(prompt);
+    }
 }
 
 // ── Native AI Chat ────────────────────────────────────────────────────────────
@@ -33,11 +39,24 @@ router.post('/api/chat', async (req, res) => {
         if (!message) return res.status(400).json({ error: 'Message is required' });
 
         const sid = sessionId || 'default-session';
-        const response = await aiService.processMessage(sid, message);
-        res.json(response);
+        
+        // Setup SSE Headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        // Flush headers immediately to start the stream
+        res.flushHeaders();
+
+        await aiService.processMessage(sid, message, {}, res);
     } catch (error) {
         console.error('Chat API Error:', error);
-        res.status(500).json({ error: 'Failed to process chat message' });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to process chat message' });
+        } else {
+            res.write(`data: ${JSON.stringify({ text: '\n\n**API Error Occurred.**' })}\n\n`);
+            res.write('data: [DONE]\n\n');
+            res.end();
+        }
     }
 });
 
